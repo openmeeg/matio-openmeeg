@@ -23,7 +23,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#define MATIO_INTERNAL
 #include <matio.h>
+#include <matio_private.h>
 
 #if !defined(HAVE_VA_COPY) && defined(HAVE___VA_COPY)
 #    define va_copy(d,s) __va_copy(d,s)
@@ -354,7 +356,7 @@ Mat_LogClose( void )
  * @return 0 on success
  */
 int
-Mat_LogInit( const char *prog_name )
+Mat_LogInit( const char* UNUSED(prog_name) )
 {
     logfunc = &matio_error_func;
 

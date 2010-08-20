@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#define MATIO_INTERNAL
 #include "matio.h"
 #include "mat4.h"
 #include "matio_private.h"

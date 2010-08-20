@@ -41,7 +41,7 @@
  * @ingroup mat_internal
  * @endif
  */
-struct _mat_t {
+struct MATIO_EXPORT _mat_t {
     void *fp;               /**< File pointer for the MAT file */
     char *header;           /**< MAT File header string */
     char *subsys_offset;    /**< offset */
@@ -71,6 +71,15 @@ struct matvar_internal {
 #endif
 };
 
+#ifdef UNUSED
+#elif defined(__GNUC__)
+# define UNUSED(x) UNUSED_ ## x __attribute__((unused))
+#elif defined(__LCLINT__)
+# define UNUSED(x) /*@unused@*/ x
+#else
+# define UNUSED(x) x
+#endif
+
 /*    snprintf.c    */
 EXTERN int mat_snprintf(char *str,size_t count,const char *fmt,...);
 EXTERN int mat_asprintf(char **ptr,const char *format, ...);
@@ -98,6 +107,8 @@ EXTERN int ReadSingleData(mat_t *mat,float   *data,enum matio_types data_type,
                int len);
 EXTERN int ReadInt32Data (mat_t *mat,mat_int32_t *data,
                enum matio_types data_type,int len);
+EXTERN int ReadInt64Data(mat_t *mat,mat_int64_t *data,
+               enum matio_types data_type,int len);
 EXTERN int ReadUInt32Data(mat_t *mat,mat_uint32_t *data,
                enum matio_types data_type,int len);
 EXTERN int ReadInt16Data (mat_t *mat,mat_int16_t *data,
@@ -124,6 +135,8 @@ EXTERN int ReadCompressedDoubleData(mat_t *mat,z_stream *z,double  *data,
 EXTERN int ReadCompressedSingleData(mat_t *mat,z_stream *z,float   *data,
                enum matio_types data_type,int len);
 EXTERN int ReadCompressedInt32Data(mat_t *mat,z_stream *z,mat_int32_t *data,
+               enum matio_types data_type,int len);
+EXTERN int ReadCompressedInt64Data(mat_t *mat,z_stream *z,mat_int64_t *data,
                enum matio_types data_type,int len);
 EXTERN int ReadCompressedUInt32Data(mat_t *mat,z_stream *z,mat_uint32_t *data,
                enum matio_types data_type,int len);

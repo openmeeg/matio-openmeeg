@@ -20,6 +20,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <stdlib.h>
+#define MATIO_INTERNAL
 #include "matio.h"
 #include "matio_private.h"
 
