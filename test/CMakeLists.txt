@@ -34,7 +34,7 @@ MATIO_TEST(TEST_SNPRINTF test_snprintf)
 
 SET(MATIO_WRITE_TESTS write writecompressed writesparse write_compressed_sparse
     write_struct write_compressed_struct writecell write_compressed_cell
-    writeinf writenan writenull writeslab)
+    writecompressed_complex writeinf writenan writenull writeslab)
 
 FOREACH(arg ${MATIO_WRITE_TESTS})
     MATIO_TEST(MATIO-${arg} test_mat ${arg})
@@ -52,9 +52,11 @@ FOREACH(file ${MATIO_FILES})
     MATIO_TEST(MATIO-copy-${file} test_mat copy test_mat_${file}.mat ${file}.mat)
 ENDFOREACH()
 
+SET(DATASETS d f i64 ui64 i32 i16 i8 str)
 SET(MATIO_OTHER_FILES writeinf writenan write_null)
 FOREACH(file ${MATIO_FILES})
-    MATIO_TEST(MATIO-copy-${file} test_mat copy test_${file}.mat ${file}.mat)
+    MATIO_TEST(MATIO-copy-${file} test_mat copy test_${file}.mat)
+#MATIO_TEST(MATIO-delete-${file} test_mat delete test_mat_copy.mat) Need to specify a variable name...
 ENDFOREACH()
 
 #   Record the output and compare it with stored values ??
@@ -85,7 +87,7 @@ ENDFOREACH()
 
 # Add more tests for these.
 
-SET(MATIO_READ_TESTS readvar4 readslab4)
+SET(MATIO_READ_TESTS readvar4 readslab4 slab3)
 
 # Set tests that are expected to fail (TO BE CORRECTED).
 
