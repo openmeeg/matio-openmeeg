@@ -27,10 +27,10 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AM_MAINTAINER_MODE
 AC_PREREQ(2.60)
 AC_CANONICAL_HOST
-AC_DEFINE_UNQUOTED(MATIO_PLATFORM,"${host}")
-AC_DEFINE_UNQUOTED(MATIO_MAJOR_VERSION,1)
-AC_DEFINE_UNQUOTED(MATIO_MINOR_VERSION,5)
-AC_DEFINE_UNQUOTED(MATIO_RELEASE_LEVEL,0)
+AC_DEFINE_UNQUOTED([MATIO_PLATFORM],"${host}",[Platform])
+AC_DEFINE_UNQUOTED([MATIO_MAJOR_VERSION],1,[Matio major version number])
+AC_DEFINE_UNQUOTED([MATIO_MINOR_VERSION],5,[Matio minor version number])
+AC_DEFINE_UNQUOTED([MATIO_RELEASE_LEVEL],0,[Matio release level number])
 PACKAGE_RELEASE_DATE="3 January 2008"
 AC_SUBST(PACKAGE_RELEASE_DATE)
 
@@ -73,10 +73,10 @@ AC_MSG_CHECKING(debug mode)
 if test "$debug" = "no"
 then
     AC_MSG_RESULT(no)
-    AC_DEFINE_UNQUOTED(NODEBUG)
+    AC_DEFINE_UNQUOTED([NODEBUG],[],[Debug disabled])
 else
     AC_MSG_RESULT(yes)
-    AC_DEFINE_UNQUOTED(DEBUG)
+    AC_DEFINE_UNQUOTED([DEBUG],[],[Debug enabled])
     debug=yes
 fi
 
@@ -89,10 +89,10 @@ AC_MSG_CHECKING(profile mode)
 if test "$profile" = "no"
 then
     AC_MSG_RESULT(no)
-    AC_DEFINE_UNQUOTED(NODEBUG)
+    AC_DEFINE_UNQUOTED([NODEBUG],[],[Debug disabled])
 else
     AC_MSG_RESULT(yes)
-    AC_DEFINE_UNQUOTED(DEBUG)
+    AC_DEFINE_UNQUOTED([DEBUG],[],[Debug enabled])
     profile=yes
 fi
 
@@ -140,6 +140,8 @@ AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
 
+AC_PROG_GREP
+
 dnl 
 dnl  Libraries
 dnl
@@ -150,10 +152,10 @@ dnl
 dnl  Headers
 dnl
 
-AC_CONFIG_HEADERS([src/matioConfig.h])
+AC_CONFIG_HEADERS([src/matioConfig.h src/matio_pubconf.h])
 AC_STDC_HEADERS
-AC_CHECK_HEADER([inttypes.h],[AC_DEFINE_UNQUOTED([HAVE_INTTYPES_H])])
-AC_CHECK_HEADER([stdint.h],[AC_DEFINE_UNQUOTED([HAVE_STDINT_H])])
+AC_CHECK_HEADER([inttypes.h],[AC_DEFINE_UNQUOTED([MATIO_HAVE_INTTYPES_H],[1])])
+AC_CHECK_HEADER([stdint.h],[AC_DEFINE_UNQUOTED([MATIO_HAVE_STDINT_H],[1])])
 AC_CHECK_HEADER([strings.h],[AC_DEFINE_UNQUOTED([HAVE_STRINGS_H])])
 AC_CHECK_HEADER([unistd.h],[AC_DEFINE_UNQUOTED([HAVE_UNISTD_H])])
 
@@ -187,6 +189,19 @@ CHECK_MATIO_INT16_T
 CHECK_MATIO_UINT16_T
 CHECK_MATIO_INT8_T
 CHECK_MATIO_UINT8_T
+
+if test "x$ac_have_mat_uint64_t" = "xyes"; then
+    HAVE_UINT64=1
+else
+    HAVE_UINT64=0
+fi
+if test "x$ac_have_mat_int64_t" = "xyes"; then
+    HAVE_INT64=1
+else
+    HAVE_INT64=0
+fi
+AC_SUBST([HAVE_UINT64],[$HAVE_UINT64])
+AC_SUBST([HAVE_INT64], [$HAVE_INT64])
 
 AC_CACHE_CHECK([for va_copy()],matio_cv_have_va_copy,[
 	AC_LINK_IFELSE([#include <stdarg.h>
@@ -226,10 +241,10 @@ then
     ])
     if test "matio_cv_have___va_copy" = "yes"
     then
-        AC_DEFINE_UNQUOTED([HAVE___VA_COPY])
+        AC_DEFINE_UNQUOTED([HAVE___VA_COPY],[],[Have va_copy])
     fi
 else
-    AC_DEFINE_UNQUOTED([HAVE_VA_COPY])
+    AC_DEFINE_UNQUOTED([HAVE_VA_COPY],[],[Have va_copy])
 fi
 
 AC_CACHE_CHECK([for vsnprintf()],matio_cv_have_vsnprintf,[
@@ -288,20 +303,22 @@ AC_CACHE_CHECK([for asprintf()],matio_cv_have_asprintf,[
 
 if test "$matio_cv_have_vsnprintf" = "yes"
 then
-    AC_DEFINE_UNQUOTED([HAVE_VSNPRINTF])
+    AC_DEFINE_UNQUOTED([HAVE_VSNPRINTF],[],[Have vsnprintf])
 fi
 if test "$matio_cv_have_snprintf" = "yes"
 then
-    AC_DEFINE_UNQUOTED([HAVE_SNPRINTF])
+    AC_DEFINE_UNQUOTED([HAVE_SNPRINTF],[],[Have snprintf])
 fi
 if test "$matio_cv_have_vasprintf" = "yes"
 then
-    AC_DEFINE_UNQUOTED([HAVE_VASPRINTF])
+    AC_DEFINE_UNQUOTED([HAVE_VASPRINTF],[],[Have vasprintf])
 fi
 if test "$matio_cv_have_asprintf" = "yes"
 then
-    AC_DEFINE_UNQUOTED([HAVE_ASPRINTF])
+    AC_DEFINE_UNQUOTED([HAVE_ASPRINTF],[],[Have asprintf])
 fi
+
+MATIO_CHECK_MATLAB
 
 MATIO_CHECK_ZLIB
 
@@ -320,11 +337,11 @@ then
 elif test "x$ac_have_hdf5" = "xno"
 then
     AC_MSG_RESULT([no])
-    AC_DEFINE_UNQUOTED([MAT73],[0])
+    AC_DEFINE_UNQUOTED([MAT73],[0],[MAT v7.3 file support])
     mat73=no
 else
     AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED([MAT73],[1])
+    AC_DEFINE_UNQUOTED([MAT73],[1],[MAT v7.3 file support])
     mat73=yes
 fi
 AM_CONDITIONAL(MAT73, test "x$mat73" = "xyes")
@@ -342,7 +359,7 @@ then
     AC_MSG_RESULT(no)
 else
     AC_MSG_RESULT(yes)
-    AC_DEFINE_UNQUOTED(EXTENDED_SPARSE)
+    AC_DEFINE_UNQUOTED([EXTENDED_SPARSE],[],[Extended sparse matrix data types])
 fi
 
 linux="no"
@@ -351,19 +368,19 @@ sun="no"
 case $build_os in
 *linux*)
     linux="yes"
-    AC_DEFINE_UNQUOTED(LINUX);;
+    AC_DEFINE_UNQUOTED([LINUX],[],[OS is Linux]);;
 *mingw*)
     winnt="yes"
-    AC_DEFINE_UNQUOTED(WINNT);;
+    AC_DEFINE_UNQUOTED([WINNT],[],[OS is WinNT]);;
 *cygwin*)
     winnt="yes"
-    AC_DEFINE_UNQUOTED(WINNT);;
+    AC_DEFINE_UNQUOTED([WINNT],[],[OS is CygWin]);;
 *sun*)
     sun="yes"
-    AC_DEFINE_UNQUOTED(SUN);;
+    AC_DEFINE_UNQUOTED([SUN],[],[OS is Sun]);;
 *solaris*)
     sun="yes"
-    AC_DEFINE_UNQUOTED(SUN);;
+    AC_DEFINE_UNQUOTED([SUN],[],[OS is Solaris]);;
 esac
 
 AM_CONDITIONAL(LINUX, test "x$linux" = "xyes")
@@ -371,29 +388,30 @@ AM_CONDITIONAL(WINNT, test "x$winnt" = "xyes")
 AM_CONDITIONAL(SUN,   test "x$sun"   = "xyes")
 
 dnl
-dnl Check whether to build test programs
+dnl Check for doxygen program
 dnl
-AC_ARG_ENABLE(test,AS_HELP_STRING([--enable-test=yes],[build test programs]),
-build_test=$enableval,build_test=no)
-AC_MSG_CHECKING(whether to build test programs)
-if test "x$build_test" = "xno"
+AC_PATH_PROG(DOXYGEN,[doxygen])
+AC_SUBST([DOXYGEN])
+if test -n "$ac_cv_path_DOXYGEN"
 then
-    AC_MSG_RESULT(no)
+    docs_install_default=yes
 else
-    AC_MSG_RESULT(yes)
-    build_test=yes
-fi  
-AM_CONDITIONAL(BUILD_TEST, test "x$build_test" = "xyes")
+    docs_install_default=no
+fi
 
 dnl
 dnl Check whether to build documentation
 dnl
 AC_ARG_ENABLE(docs,AS_HELP_STRING([--enable-docs=yes],[install documentation]),
-docs_install=$enableval,docs_install=no)
+docs_install=$enableval,docs_install=$docs_install_default)
 AC_MSG_CHECKING(install docs)
-if test "$docs_install" = "no"
+if test "x$docs_install" = "xno"
 then
     AC_MSG_RESULT(no)
+elif test -z "$ac_cv_path_DOXYGEN"
+then
+    AC_MSG_RESULT([no (doxygen program not found)])
+    docs_install=no
 else
     AC_MSG_RESULT(yes)
     docs_install=yes
@@ -412,6 +430,11 @@ else
   FCLINK='$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@'
 fi
 AC_SUBST(FCLINK)
+
+# Initialize the test suite.
+AC_CONFIG_TESTDIR([test])
+AC_SUBST([AUTOM4TE], [${AUTOM4TE=autom4te}])
+AC_SUBST([AUTOTEST], ['$(AUTOM4TE) --language=Autotest'])
 
 AC_CONFIG_FILES([Makefile \
                  matio.pc \
@@ -439,11 +462,11 @@ AC_MSG_RESULT([])
 AC_MSG_RESULT([Features --------------------------------------------])
 AC_MSG_RESULT([    Fortran Interface: $enable_fortran])
 AC_MSG_RESULT([MAT v7.3 file support: $mat73])
-AC_MSG_RESULT([        test programs: $build_test])
 AC_MSG_RESULT([        Documentation: $docs_install])
 AC_MSG_RESULT([])
 AC_MSG_RESULT([Packages --------------------------------------------])
 AC_MSG_RESULT([                 zlib: $ZLIB_LIBS])
 AC_MSG_RESULT([                 hdf5: $HDF5_LIBS])
+AC_MSG_RESULT([               MATLAB: $MATLABEXE])
 AC_MSG_RESULT([])
 AC_MSG_RESULT([])

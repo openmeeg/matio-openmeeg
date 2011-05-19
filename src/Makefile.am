@@ -1,6 +1,6 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
-## Copyright (C) 2005-2008   Christopher C. Hulbert
+## Copyright (C) 2005-2011   Christopher C. Hulbert
 ##
 ##  This library is free software; you can redistribute it and/or
 ##  modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,6 @@
 ##  License along with this library; if not, write to the Free Software
 ##  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ##
-AUTOMAKE_OPTIONS = foreign 1.8 no-dependencies
 VPATH = @srcdir@
 
 LT_CURRENT=2
@@ -30,9 +29,10 @@ if HAVE_ZLIB
     ZLIB_SRC = inflate.c
 endif
 
-nodist_include_HEADERS = matioConfig.h
+nodist_noinst_HEADERS  = matioConfig.h
+nodist_include_HEADERS = matio_pubconf.h
 include_HEADERS        = matio.h
-noinst_HEADERS         = matio_private.h mat4.h mat5.h
+noinst_HEADERS         = matio_private.h mat4.h mat5.h mat73.h
 lib_LTLIBRARIES        = libmatio.la
 libmatio_la_SOURCES    = snprintf.c endian.c io.c $(ZLIB_SRC) read_data.c \
                          mat5.c mat4.c mat.c

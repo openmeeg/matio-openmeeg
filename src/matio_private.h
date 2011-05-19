@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008   Christopher C. Hulbert
+ * Copyright (C) 2008-2010   Christopher C. Hulbert
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -18,8 +18,12 @@
 #ifndef MATIO_PRIVATE_H
 #define MATIO_PRIVATE_H
 
+#include "matioConfig.h"
 #include "matio.h"
-#if MAT73
+#if defined(HAVE_ZLIB)
+#   include <zlib.h>
+#endif
+#if defined(MAT73) && MAT73
 #   include <hdf5.h>
 #else
 #   define hobj_ref_t int
@@ -32,6 +36,10 @@
 #   else
 #       define EXTERN extern
 #   endif
+#endif
+
+#if defined(HAVE_ZLIB) && HAVE_ZLIB
+#   define ZLIB_BYTE_PTR(a) ((Bytef *)(a))
 #endif
 
 /** @if mat_devman

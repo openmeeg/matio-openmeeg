@@ -42,6 +42,8 @@
 #cmakedefine WINNT
 #cmakedefine SUN
 
+#cmakedefine MAT73 1
+
 #cmakedefine MAT_FT_DEFAULT @MAT_FT_DEFAULT@
 
 #cmakedefine HAVE_MAT_INT64_T 1

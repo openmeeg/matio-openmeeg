@@ -1,6 +1,6 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
-## Copyright (C) 2007-2008   Christopher C. Hulbert
+## Copyright (C) 2007-2011   Christopher C. Hulbert
 ##
 ## This library is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,6 @@
 ## License along with this library; if not, write to the Free Software
 ## Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ##
-AUTOMAKE_OPTIONS = foreign 1.8 no-dependencies
 VPATH = @srcdir@
 
 docdir = $(prefix)/share/doc/matio
@@ -25,7 +24,7 @@ doc_DATA = $(top_builddir)/doxygen/user_api/latex/libmatio.pdf
 doc: $(doc_DATA)
 
 $(top_builddir)/doxygen/user_api/latex/libmatio.pdf:
-	(cat $(srcdir)/doxygen.config; echo "INPUT=$(top_srcdir)/src";echo "LATEX_HEADER=$(srcdir)/../header.tex"; echo "IMAGE_PATH=$(srcdir)") | doxygen -
+	(cat $(srcdir)/doxygen.config; echo "INPUT=$(top_srcdir)/src"; echo "IMAGE_PATH=$(srcdir)") | $(DOXYGEN) -
 	cd latex;../$(srcdir)/../format_api.sh;../$(srcdir)/../textopdf.sh
 	mv latex/refman.pdf latex/libmatio.pdf
 

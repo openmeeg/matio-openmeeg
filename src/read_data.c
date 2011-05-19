@@ -3,7 +3,7 @@
  * @ingroup MAT
  */
 /*
- * Copyright (C) 2005-2006   Christopher C. Hulbert
+ * Copyright (C) 2005-2010   Christopher C. Hulbert
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
-#include "matio.h"
 #include "matio_private.h"
 #if defined(HAVE_ZLIB)
 #   include <zlib.h>
@@ -6031,7 +6030,7 @@ ReadCompressedDataSlab1(mat_t *mat,z_stream *z,void *data,
             }
             break;
         }
-#if HAVE_MAT_INT64_T
+#ifdef HAVE_MAT_INT64_T
         case MAT_C_INT64:
         {
             mat_int64_t *ptr = data;
@@ -6046,7 +6045,7 @@ ReadCompressedDataSlab1(mat_t *mat,z_stream *z,void *data,
             break;
         }
 #endif /* HAVE_MAT_INT64_T */
-#if HAVE_MAT_UINT64_T
+#ifdef HAVE_MAT_UINT64_T
         case MAT_C_UINT64:
         {
             mat_uint64_t *ptr = data;
