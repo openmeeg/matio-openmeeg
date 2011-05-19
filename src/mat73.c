@@ -833,7 +833,8 @@ Mat_H5ReadGroupInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id)
                     }
                 }
                 H5Dclose(field_id);
-            } else if ( -1 < (field_id=H5Gopen(dset_id,fieldnames[k],H5P_DEFAULT)) ) {
+            } else if ( -1 <
+                       (field_id=H5Gopen(dset_id,fieldnames[k],H5P_DEFAULT)) ) {
                 fields[k] = Mat_VarCalloc();
                 fields[k]->internal->fp   = mat;
                 fields[k]->name = strdup(fieldnames[k]);
@@ -968,6 +969,47 @@ Mat_H5ReadNextReferenceInfo(hid_t ref_id,matvar_t *matvar,mat_t *mat)
                     Mat_H5ReadNextReferenceInfo(ref_id,cells[i],mat);
                 }
                 free(ref_ids);
+            } else if ( MAT_C_STRUCT == matvar->class_type ) {
+                /* Empty structures can be a dataset */
+
+                /* Turn off error printing so testing for attributes doesn't print
+                 * error stacks
+                 */
+                H5Eget_auto(H5E_DEFAULT,&efunc,&client_data);
+                H5Eset_auto(H5E_DEFAULT,(H5E_auto_t)0,NULL);
+                /* Check if the structure defines its fields in MATLAB_fields */
+                attr_id = H5Aopen_name(dset_id,"MATLAB_fields");
+                if ( -1 < attr_id ) {
+                    int field_length, i;
+                    hid_t      field_id;
+                    hsize_t    nfields;
+                    hvl_t     *fieldnames_vl;
+                    matvar_t **fields;
+
+                    space_id = H5Aget_space(attr_id);
+                    (void)H5Sget_simple_extent_dims(space_id,&nfields,NULL);
+                    field_id = H5Aget_type(attr_id);
+                    fieldnames_vl = malloc(nfields*sizeof(*fieldnames_vl));
+                    H5Aread(attr_id,field_id,fieldnames_vl);
+
+                    fields = calloc(nfields,sizeof(*fields));
+                    for ( i = 0; i < nfields; i++ ) {
+                        fields[i] = Mat_VarCalloc();
+                        fields[i]->name = calloc(fieldnames_vl[i].len+1,1);
+                        memcpy(fields[i]->name,fieldnames_vl[i].p,
+                               fieldnames_vl[i].len);
+                    }
+
+                    matvar->data = fields;
+                    matvar->data_size = sizeof(matvar_t*);
+                    matvar->nbytes    = nfields*matvar->data_size;
+
+                    H5Sclose(space_id);
+                    H5Tclose(field_id);
+                    H5Aclose(attr_id);
+                    free(fieldnames_vl);
+                }
+                H5Eset_auto(H5E_DEFAULT,efunc,client_data);
             }
 
             if ( matvar->internal->id != dset_id ) {
@@ -1049,6 +1091,9 @@ Mat_H5ReadNextReferenceData(hid_t ref_id,matvar_t *matvar,mat_t *mat)
                 matvar->data_type = MAT_T_UINT8;
                 matvar->data_size = Mat_SizeOf(MAT_T_UINT8);
                 data_type_id      = Mat_data_type_to_hid_t(MAT_T_UINT8);
+            } else if ( MAT_C_STRUCT == matvar->class_type ) {
+                /* Empty structure array */
+                break;
             } else {
                 matvar->data_size = Mat_SizeOfClass(matvar->class_type);
                 data_type_id      = Mat_class_type_to_hid_t(matvar->class_type);
@@ -1191,7 +1236,8 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
                 H5Tinsert(h5_complex,"imag",H5Tget_size(h5_complex_base),
                           h5_complex_base);
                 mspace_id = H5Screate_simple(matvar->rank,perm_dims,NULL);
-                dset_id = H5Dcreate(id,name,h5_complex,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                dset_id = H5Dcreate(id,name,h5_complex,mspace_id,H5P_DEFAULT,
+                                    H5P_DEFAULT,H5P_DEFAULT);
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
                             strlen(Mat_class_names[matvar->class_type])+1);
@@ -1393,7 +1439,8 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
             } else {
                 (void)H5Iget_name(id,id_name,127);
                 is_ref = !strcmp(id_name,"/#refs#");
-                struct_id = H5Gcreate(id,name,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                struct_id = H5Gcreate(id,name,H5P_DEFAULT,H5P_DEFAULT,
+                                H5P_DEFAULT);
                 if ( struct_id < 0 ) {
                     Mat_Critical("Error creating group for struct %s",name);
                 } else {
@@ -1441,8 +1488,10 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
                         if (is_ref) {
                             refs_id = id;
                         } else {
-                            if ((refs_id=H5Gopen(id,"/#refs#",H5P_DEFAULT) < 0 ))
-                                refs_id = H5Gcreate(id,"/#refs#",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                            refs_id = H5Gopen(id,"/#refs#",H5P_DEFAULT);
+                            if ( refs_id < 0 )
+                                refs_id = H5Gcreate(id,"/#refs#",H5P_DEFAULT,
+                                              H5P_DEFAULT,H5P_DEFAULT);
                         }
                         if ( refs_id > -1 ) {
                             char name[64];
@@ -1546,7 +1595,8 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
                     H5Eget_auto(H5E_DEFAULT,&efunc,&client_data);
                     H5Eset_auto(H5E_DEFAULT,(H5E_auto_t)0,NULL);
                     if ((refs_id=H5Gopen(id,"/#refs#",H5P_DEFAULT) < 0 ))
-                        refs_id = H5Gcreate(id,"/#refs#",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                        refs_id = H5Gcreate(id,"/#refs#",H5P_DEFAULT,
+                                      H5P_DEFAULT,H5P_DEFAULT);
                     H5Eset_auto(H5E_DEFAULT,efunc,client_data);
                 }
                 
@@ -1660,7 +1710,8 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
                 H5Tinsert(h5_complex,"imag",H5Tget_size(h5_complex_base),
                           h5_complex_base);
                 mspace_id = H5Screate_simple(matvar->rank,perm_dims,NULL);
-                dset_id = H5Dcreate(id,name,h5_complex,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                dset_id = H5Dcreate(id,name,h5_complex,mspace_id,H5P_DEFAULT,
+                              H5P_DEFAULT,H5P_DEFAULT);
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
                             strlen(Mat_class_names[matvar->class_type])+1);
@@ -1862,7 +1913,8 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
             } else {
                 (void)H5Iget_name(id,id_name,127);
                 is_ref = !strcmp(id_name,"/#refs#");
-                struct_id = H5Gcreate(id,name,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                struct_id = H5Gcreate(id,name,H5P_DEFAULT,H5P_DEFAULT,
+                                H5P_DEFAULT);
                 if ( struct_id < 0 ) {
                     Mat_Critical("Error creating group for struct %s",name);
                 } else {
@@ -1911,8 +1963,10 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
                         if (is_ref) {
                             refs_id = id;
                         } else {
-                            if ((refs_id=H5Gopen(id,"/#refs#",H5P_DEFAULT) < 0 ))
-                                refs_id = H5Gcreate(id,"/#refs#",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                            refs_id = H5Gopen(id,"/#refs#",H5P_DEFAULT);
+                            if ( refs_id < 0 )
+                                refs_id = H5Gcreate(id,"/#refs#",H5P_DEFAULT,
+                                              H5P_DEFAULT,H5P_DEFAULT);
                         }
                         if ( refs_id > -1 ) {
                             char obj_name[64];
@@ -2016,7 +2070,8 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
                     H5Eget_auto(H5E_DEFAULT,&efunc,&client_data);
                     H5Eset_auto(H5E_DEFAULT,(H5E_auto_t)0,NULL);
                     if ((refs_id=H5Gopen(id,"/#refs#",H5P_DEFAULT) < 0 ))
-                        refs_id = H5Gcreate(id,"/#refs#",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                        refs_id = H5Gcreate(id,"/#refs#",H5P_DEFAULT,
+                                      H5P_DEFAULT,H5P_DEFAULT);
                     H5Eset_auto(H5E_DEFAULT,efunc,client_data);
                 }
                 
@@ -2538,20 +2593,24 @@ Mat_VarReadNextInfo73( mat_t *mat )
                 matvar->data      = malloc(matvar->nbytes);
                 cells  = matvar->data;
 
-                ref_ids = malloc(ncells*sizeof(*ref_ids));
-                H5Dread(dset_id,H5T_STD_REF_OBJ,H5S_ALL,H5S_ALL,H5P_DEFAULT,
-                        ref_ids);
-                for ( i = 0; i < ncells; i++ ) {
-                    hid_t ref_id;
-                    cells[i] = Mat_VarCalloc();
-                    cells[i]->internal->hdf5_ref = ref_ids[i];
-                    /* Closing of ref_id is done in Mat_H5ReadNextReferenceInfo */
-                    ref_id = H5Rdereference(dset_id,H5R_OBJECT,ref_ids+i);
-                    cells[i]->internal->id=ref_id;
-                    cells[i]->internal->fp=matvar->internal->fp;
-                    Mat_H5ReadNextReferenceInfo(ref_id,cells[i],mat);
+                if ( ncells ) {
+                    ref_ids = malloc(ncells*sizeof(*ref_ids));
+                    H5Dread(dset_id,H5T_STD_REF_OBJ,H5S_ALL,H5S_ALL,H5P_DEFAULT,
+                            ref_ids);
+                    for ( i = 0; i < ncells; i++ ) {
+                        hid_t ref_id;
+                        cells[i] = Mat_VarCalloc();
+                        cells[i]->internal->hdf5_ref = ref_ids[i];
+                        /* Closing of ref_id is done in
+                         * Mat_H5ReadNextReferenceInfo
+                         */
+                        ref_id = H5Rdereference(dset_id,H5R_OBJECT,ref_ids+i);
+                        cells[i]->internal->id=ref_id;
+                        cells[i]->internal->fp=matvar->internal->fp;
+                        Mat_H5ReadNextReferenceInfo(ref_id,cells[i],mat);
+                    }
+                    free(ref_ids);
                 }
-                free(ref_ids);
             } else if ( MAT_C_STRUCT == matvar->class_type ) {
                 /* Empty structures can be a dataset */
 
@@ -2675,7 +2734,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                 unsigned empty = 1;
                 mspace_id = H5Screate_simple(1,&rank,NULL);
                 dset_id = H5Dcreate(*(hid_t*)mat->fp,matvar->name,
-                              H5T_NATIVE_HSIZE,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                              H5T_NATIVE_HSIZE,mspace_id,H5P_DEFAULT,
+                              H5P_DEFAULT,H5P_DEFAULT);
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
                             strlen(Mat_class_names[matvar->class_type])+1);
@@ -2710,7 +2770,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                           h5_complex_base);
                 mspace_id = H5Screate_simple(matvar->rank,perm_dims,NULL);
                 dset_id = H5Dcreate(*(hid_t*)mat->fp,matvar->name,
-                                    h5_complex,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                              h5_complex,mspace_id,H5P_DEFAULT,
+                              H5P_DEFAULT,H5P_DEFAULT);
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
                             strlen(Mat_class_names[matvar->class_type])+1);
@@ -2775,7 +2836,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                 unsigned empty = 1;
                 mspace_id = H5Screate_simple(1,&rank,NULL);
                 dset_id = H5Dcreate(*(hid_t*)mat->fp,matvar->name,
-                              H5T_NATIVE_HSIZE,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                              H5T_NATIVE_HSIZE,mspace_id,H5P_DEFAULT,
+                              H5P_DEFAULT,H5P_DEFAULT);
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
                             strlen(Mat_class_names[matvar->class_type])+1);
@@ -2863,7 +2925,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                 unsigned empty = 1;
                 mspace_id = H5Screate_simple(1,&rank,NULL);
                 dset_id = H5Dcreate(*(hid_t*)mat->fp,matvar->name,
-                              H5T_NATIVE_HSIZE,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                              H5T_NATIVE_HSIZE,mspace_id,H5P_DEFAULT,
+                              H5P_DEFAULT,H5P_DEFAULT);
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
                             strlen(Mat_class_names[matvar->class_type])+1);
@@ -2911,7 +2974,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                 H5Dclose(dset_id);
                 H5Sclose(mspace_id);
             } else {
-                struct_id = H5Gcreate(*(hid_t*)mat->fp,matvar->name,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                struct_id = H5Gcreate(*(hid_t*)mat->fp,matvar->name,H5P_DEFAULT,
+                                H5P_DEFAULT,H5P_DEFAULT);
                 if ( struct_id < 0 ) {
                     Mat_Critical("Error creating group for struct %s",matvar->name);
                 } else {
@@ -2960,8 +3024,10 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                         /* Silence errors if /#refs does not exist */
                         H5Eget_auto(H5E_DEFAULT,&efunc,&client_data);
                         H5Eset_auto(H5E_DEFAULT,(H5E_auto_t)0,NULL);
-                        if ((refs_id=H5Gopen(*(hid_t*)mat->fp,"/#refs#",H5P_DEFAULT) < 0 )) {
-                            refs_id = H5Gcreate(*(hid_t*)mat->fp,"/#refs#",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                        refs_id=H5Gopen(*(hid_t*)mat->fp,"/#refs#",H5P_DEFAULT);
+                        if ( refs_id < 0 ) {
+                            refs_id = H5Gcreate(*(hid_t*)mat->fp,"/#refs#",
+                                          H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
                         }
                         H5Eset_auto(H5E_DEFAULT,efunc,client_data);
                     
@@ -3028,7 +3094,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                 unsigned empty = 1;
                 mspace_id = H5Screate_simple(1,&rank,NULL);
                 dset_id = H5Dcreate(*(hid_t*)mat->fp,matvar->name,
-                              H5T_NATIVE_HSIZE,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                              H5T_NATIVE_HSIZE,mspace_id,H5P_DEFAULT,
+                              H5P_DEFAULT,H5P_DEFAULT);
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
                             strlen(Mat_class_names[matvar->class_type])+1);
@@ -3058,8 +3125,10 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                  */
                 H5Eget_auto(H5E_DEFAULT,&efunc,&client_data);
                 H5Eset_auto(H5E_DEFAULT,(H5E_auto_t)0,NULL);
-                if ((refs_id=H5Gopen(*(hid_t*)mat->fp,"/#refs#",H5P_DEFAULT) < 0 ))
-                    refs_id = H5Gcreate(*(hid_t*)mat->fp,"/#refs#",H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                refs_id = H5Gopen(*(hid_t*)mat->fp,"/#refs#",H5P_DEFAULT);
+                if ( refs_id < 0 )
+                    refs_id = H5Gcreate(*(hid_t*)mat->fp,"/#refs#",H5P_DEFAULT,
+                                  H5P_DEFAULT,H5P_DEFAULT);
                 H5Eset_auto(H5E_DEFAULT,efunc,client_data);
                 
                 if ( refs_id > -1 ) {
@@ -3081,7 +3150,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
 
                     mspace_id=H5Screate_simple(matvar->rank,perm_dims,NULL);
                     dset_id = H5Dcreate(*(hid_t*)mat->fp,matvar->name,
-                        H5T_STD_REF_OBJ,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                        H5T_STD_REF_OBJ,mspace_id,H5P_DEFAULT,
+                        H5P_DEFAULT,H5P_DEFAULT);
                     H5Dwrite(dset_id,H5T_STD_REF_OBJ,H5S_ALL,H5S_ALL,
                         H5P_DEFAULT,refs);
 
@@ -3115,7 +3185,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
             for ( k = 1; k < matvar->rank; k++ )
                 nmemb *= matvar->dims[k];
 
-            sparse_id = H5Gcreate(*(hid_t*)mat->fp,matvar->name,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+            sparse_id = H5Gcreate(*(hid_t*)mat->fp,matvar->name,H5P_DEFAULT,
+                            H5P_DEFAULT,H5P_DEFAULT);
             if ( sparse_id < 0 ) {
                 Mat_Critical("Error creating group for sparse array %s",
                     matvar->name);
@@ -3194,7 +3265,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                     H5Sclose(mspace_id);
                 } else { /* if ( matvar->isComplex ) */
                     dset_id = H5Dcreate(sparse_id,"data",
-                        H5T_NATIVE_DOUBLE,mspace_id,H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                        H5T_NATIVE_DOUBLE,mspace_id,H5P_DEFAULT,H5P_DEFAULT,
+                        H5P_DEFAULT);
                     H5Dwrite(dset_id,H5T_NATIVE_DOUBLE,H5S_ALL,H5S_ALL,
                              H5P_DEFAULT,sparse->data);
                     H5Dclose(dset_id);

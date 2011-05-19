@@ -123,13 +123,11 @@ enum matio_classes {
  * Matlab array flags
  */
 enum matio_flags {
-    MAT_F_COMPLEX = 0x0800,    /**< @brief Complex bit flag */
-    MAT_F_GLOBAL  = 0x0400,    /**< @brief Global bit flag */
-    MAT_F_LOGICAL = 0x0200,    /**< @brief Logical bit flag */
-    MAT_F_CLASS_T = 0x00ff     /**< @brief Class-Type bits flag */
+    MAT_F_COMPLEX        = 0x0800, /**< @brief Complex bit flag */
+    MAT_F_GLOBAL         = 0x0400, /**< @brief Global bit flag */
+    MAT_F_LOGICAL        = 0x0200, /**< @brief Logical bit flag */
+    MAT_F_DONT_COPY_DATA = 0x0001  /**< Don't copy data, use keep the pointer */
 };
-
-#define MEM_CONSERVE 1       /**< @brief Conserve memory */
 
 /** @brief Matlab compression options
  *
@@ -147,8 +145,8 @@ enum matio_compression {
  * matio lookup type
  */
 enum {
-    BY_NAME  = 1, /**< Lookup by name */
-    BY_INDEX = 2  /**< Lookup by index */
+    MAT_BY_NAME  = 1, /**< Lookup by name */
+    MAT_BY_INDEX = 2  /**< Lookup by index */
 };
 
 /** @brief Complex data type using split storage
@@ -256,7 +254,11 @@ EXTERN MATIO_EXPORT matvar_t **Mat_VarGetCellsLinear(matvar_t *matvar,int start,
 EXTERN MATIO_EXPORT size_t     Mat_VarGetSize(matvar_t *matvar);
 EXTERN MATIO_EXPORT int        Mat_VarGetNumberOfFields(matvar_t *matvar);
 EXTERN MATIO_EXPORT int        Mat_VarAddStructField(matvar_t *matvar,matvar_t **fields);
-EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructField(matvar_t *matvar,const void *name_or_index,
+EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructFieldByIndex(matvar_t *matvar,
+                                                            size_t field_index,size_t index);
+EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructFieldByName(matvar_t *matvar,
+                                                           const char *field_name,size_t index);
+EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructField(matvar_t *matvar,void *name_or_index,
                                                      int opt,int index);
 EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructs(matvar_t *matvar,int *start,int *stride,
                                                  int *edge,int copy_fields);

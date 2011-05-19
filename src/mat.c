@@ -282,10 +282,19 @@ Mat_Close( mat_t *mat )
 int
 Mat_Rewind( mat_t *mat )
 {
-    if ( mat->version != MAT_FT_MAT4 )
-        fseek(mat->fp,128L,SEEK_SET);
-    else
-        fseek(mat->fp,0L,SEEK_SET);
+    switch ( mat->version ) {
+        case MAT_FT_MAT73:
+            mat->next_index = 0;
+            break;
+        case MAT_FT_MAT5:
+            fseek(mat->fp,128L,SEEK_SET);
+            break;
+        case MAT_FT_MAT4:
+            fseek(mat->fp,0L,SEEK_SET);
+            break;
+        default:
+            return -1;
+    }
     return 0;
 }
 
@@ -429,10 +438,10 @@ Mat_VarCalloc(void)
  * @param dims array of dimensions of the variable of size rank
  * @param data pointer to the data
  * @param opt 0, or bitwise or of the following options:
- * - MEM_CONSERVE to just use the pointer to the data and not copy the data
- *       itself.  Note that the pointer should not be freed until you are done
- *       with the mat variable.  The Mat_VarFree function will NOT free
- *       data that was created with MEM_CONSERVE, so free it yourself.
+ * - MAT_F_DONT_COPY_DATA to just use the pointer to the data and not copy the
+ *       data itself. Note that the pointer should not be freed until you are
+ *       done with the mat variable.  The Mat_VarFree function will NOT free
+ *       data that was created with MAT_F_DONT_COPY_DATA, so free it yourself.
  * - MAT_F_COMPLEX to specify that the data is complex.  The data variable
  *       should be a pointer to a struct ComplexSplit type.
  * - MAT_F_GLOBAL to assign the variable as a global variable
@@ -539,7 +548,7 @@ Mat_VarCreate(const char *name,enum matio_classes class_type,
     }
     if ( data == NULL ) {
         matvar->data = NULL;
-    } else if ( opt & MEM_CONSERVE ) {
+    } else if ( opt & MAT_F_DONT_COPY_DATA ) {
         matvar->data         = data;
         matvar->mem_conserve = 1;
     } else if ( MAT_C_SPARSE == matvar->class_type ) {
@@ -778,7 +787,7 @@ Mat_VarDuplicate(const matvar_t *in, int opt)
 /** @brief Frees all the allocated memory associated with the structure
  *
  * Frees memory used by a MAT variable.  Frees the data associated with a
- * MAT variable if it's non-NULL and MEM_CONSERVE was not used.
+ * MAT variable if it's non-NULL and MAT_F_DONT_COPY_DATA was not used.
  * @ingroup MAT
  * @param matvar Pointer to the matvar_t structure
  */
@@ -1229,7 +1238,6 @@ Mat_VarAddStructField(matvar_t *matvar,matvar_t **fields)
 /** @brief Returns the number of fields in a structure variable
  *
  * Returns the number of fields in the given structure.
- * MAT file version must be 5.
  * @ingroup MAT
  * @param matvar Structure matlab variable
  * @returns Number of fields, or a negative number on error
@@ -1244,15 +1252,104 @@ Mat_VarGetNumberOfFields(matvar_t *matvar)
     } else {
         for ( i = 0; i < matvar->rank; i++ )
             nmemb *= matvar->dims[i];
-        nfields = matvar->nbytes / (nmemb*matvar->data_size);
+        if ( nmemb > 0 )
+            nfields = matvar->nbytes / (nmemb*matvar->data_size);
+        else
+            nfields = matvar->nbytes / (matvar->data_size);
     }
     return nfields;
 }
 
-/** @brief Finds a field of a structure
+/** @brief Finds a field of a structure by the field's index
  *
- * Returns a pointer to the structure field at the given 0-relative index. MAT
- * file version must be 5.
+ * Returns a pointer to the structure field at the given 0-relative index.
+ * @ingroup MAT
+ * @param matvar Pointer to the Structure MAT variable
+ * @param field_index 0-relative index of the field.
+ * @param index linear index of the structure array
+ * @return Pointer to the structure field on success, NULL on error
+ */
+matvar_t *
+Mat_VarGetStructFieldByIndex(matvar_t *matvar,size_t field_index,size_t index)
+{
+    int       i, err = 0, nfields, nmemb;
+    matvar_t *field = NULL;
+
+    if ( matvar == NULL || matvar->class_type != MAT_C_STRUCT   ||
+         matvar->data_size == 0 )
+        return field;
+
+    nmemb = 1;
+    for ( i = 0; i < matvar->rank; i++ )
+        nmemb *= matvar->dims[i];
+
+    if ( nmemb > 0 )
+        nfields = matvar->nbytes / (nmemb*matvar->data_size);
+    else
+        nfields = matvar->nbytes / (matvar->data_size);
+
+    if ( nmemb > 0 && index >= nmemb ) {
+        Mat_Critical("Mat_VarGetStructField: structure index out of bounds");
+    } else if ( nfields > 0 ) {
+        if ( field_index > nfields ) {
+            Mat_Critical("Mat_VarGetStructField: field index out of bounds");
+        } else {
+            field = *((matvar_t **)matvar->data+index*nfields+field_index);
+        }
+    }
+
+    return field;
+}
+
+/** @brief Finds a field of a structure by the field's name
+ *
+ * Returns a pointer to the structure field at the given 0-relative index.
+ * @ingroup MAT
+ * @param matvar Pointer to the Structure MAT variable
+ * @param name Name of the structure field
+ * @param index linear index of the structure array
+ * @return Pointer to the structure field on success, NULL on error
+ */
+matvar_t *
+Mat_VarGetStructFieldByName(matvar_t *matvar,const char *field_name,
+    size_t index)
+{
+    int       i, err = 0, nfields, nmemb;
+    matvar_t *field = NULL;
+
+    if ( matvar == NULL || matvar->class_type != MAT_C_STRUCT   ||
+         matvar->data_size == 0 )
+        return field;
+
+    nmemb = 1;
+    for ( i = 0; i < matvar->rank; i++ )
+        nmemb *= matvar->dims[i];
+
+    if ( nmemb > 0 )
+        nfields = matvar->nbytes / (nmemb*matvar->data_size);
+    else
+        nfields = matvar->nbytes / (matvar->data_size);
+
+    if ( index < 0 || (nmemb > 0 && index >= nmemb ) ) {
+        Mat_Critical("Mat_VarGetStructField: structure index out of bounds");
+    } else if ( nfields > 0 ) {
+        matvar_t **fields = (matvar_t **)matvar->data+index*nfields;
+        for ( i = 0; i < nfields; i++ ) {
+            field = fields[i];
+            if ( NULL != field && NULL != field->name &&
+                 !strcmp(field->name,field_name) )
+                break;
+            else
+                field = NULL;
+        }
+    }
+
+    return field;
+}
+
+/** @brief Finds a field of a structure by the field's index
+ *
+ * Returns a pointer to the structure field at the given 0-relative index.
  * @ingroup MAT
  * @param matvar Pointer to the Structure MAT variable
  * @param name_or_index Name of the field, or the 1-relative index of the field.
@@ -1273,32 +1370,22 @@ Mat_VarGetStructField(matvar_t *matvar,const void *name_or_index,int opt,int ind
     for ( i = 0; i < matvar->rank; i++ )
         nmemb *= matvar->dims[i];
 
-    nfields = matvar->nbytes / (nmemb*sizeof(matvar_t *));
+    if ( nmemb > 0 )
+        nfields = matvar->nbytes / (nmemb*matvar->data_size);
+    else
+        nfields = matvar->nbytes / (matvar->data_size);
 
-    if ( ind >= nmemb || ind < 0)
+    if ( index < 0 || (nmemb > 0 && index >= nmemb ))
+        err = 1;
+    else if ( nfields < 1 )
         err = 1;
 
-    if ( !err && (opt == BY_INDEX) ) {
-        int field_index;
-
-        field_index = *(int *)name_or_index;
-
-        if ( field_index > nfields || field_index < 1 )
-            Mat_Critical("Mat_VarGetStructField: field index out of bounds");
-        else
-            field = *((matvar_t **)matvar->data+ind*nfields+field_index - 1);
-    } else if ( !err && (opt == BY_NAME) ) {
-        char *field_name;
-
-        field_name = (char *)name_or_index;
-
-        for ( i = 0; i < nfields; i++ ) {
-            field = *((matvar_t **)matvar->data+ind*nfields+i);
-            if ( !strcmp(field->name,field_name) )
-                break;
-            else
-                field = NULL;
-        }
+    if ( !err && (opt == MAT_BY_INDEX) ) {
+        size_t field_index = *(int *)name_or_index;
+        if ( field_index > 0 )
+            field = Mat_VarGetStructFieldByIndex(matvar,field_index-1,index);
+    } else if ( !err && (opt == MAT_BY_NAME) ) {
+        field = Mat_VarGetStructFieldByName(matvar,name_or_index,index);
     }
 
     return field;
@@ -1593,18 +1680,14 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
             }
             case MAT_C_CHAR:
             {
+                char *data = matvar->data;
                 if ( !printdata )
                     break;
-                if ( matvar->dims[0] == 1 ) {
-                    printf("%s\n",(char *)matvar->data);
-                } else {
-                    char *data = matvar->data;
-                    for ( i = 0; i < matvar->dims[0]; i++ ) {
-                        j = 0;
-                        for ( j = 0; j < matvar->dims[1]; j++ )
-                            printf("%c",data[j*matvar->dims[0]+i]);
-                        printf("\n");
-                    }
+                for ( i = 0; i < matvar->dims[0]; i++ ) {
+                    j = 0;
+                    for ( j = 0; j < matvar->dims[1]; j++ )
+                        printf("%c",data[j*matvar->dims[0]+i]);
+                    printf("\n");
                 }
                 break;
             }

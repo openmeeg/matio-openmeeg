@@ -49,6 +49,7 @@ static const char *data_type_desc[23] = {"Unknown","8-bit, signed integer",
 
 #define TYPE_FROM_TAG(a)          (enum matio_types)((a) & 0x000000ff)
 #define CLASS_FROM_ARRAY_FLAGS(a) (enum matio_classes)((a) & 0x000000ff)
+#define CLASS_TYPE_MASK           0x000000ff
 
 static const struct ComplexSplit const null_complex_data = {NULL,NULL};
 
@@ -317,7 +318,7 @@ GetMatrixMaxBufSize(matvar_t *matvar)
     if ( NULL != matvar->name )
         len = strlen(matvar->name);
     else
-        len=8;
+        len=4;
 
     if ( len <= 4 ) {
         nBytes += tag_size;
@@ -2123,7 +2124,7 @@ WriteCellArrayFieldInfo(mat_t *mat,matvar_t *matvar)
     start = ftell(mat->fp);
 
     /* Array Flags */
-    array_flags = matvar->class_type & MAT_F_CLASS_T;
+    array_flags = matvar->class_type & CLASS_TYPE_MASK;
     if ( matvar->isComplex )
         array_flags |= MAT_F_COMPLEX;
     if ( matvar->isGlobal )
@@ -2260,7 +2261,7 @@ WriteCellArrayField(mat_t *mat,matvar_t *matvar )
     start = ftell(mat->fp);
 
     /* Array Flags */
-    array_flags = matvar->class_type & MAT_F_CLASS_T;
+    array_flags = matvar->class_type & CLASS_TYPE_MASK;
     if ( matvar->isComplex )
         array_flags |= MAT_F_COMPLEX;
     if ( matvar->isGlobal )
@@ -2474,7 +2475,7 @@ WriteCompressedCellArrayField(mat_t *mat,matvar_t *matvar,z_stream *z)
     start = ftell(mat->fp);
 
     /* Array Flags */
-    array_flags = matvar->class_type & MAT_F_CLASS_T;
+    array_flags = matvar->class_type & CLASS_TYPE_MASK;
     if ( matvar->isComplex )
         array_flags |= MAT_F_COMPLEX;
     if ( matvar->isGlobal )
@@ -2706,7 +2707,7 @@ WriteStructField(mat_t *mat,matvar_t *matvar)
     start = ftell(mat->fp);
 
     /* Array Flags */
-    array_flags = matvar->class_type & MAT_F_CLASS_T;
+    array_flags = matvar->class_type & CLASS_TYPE_MASK;
     if ( matvar->isComplex )
         array_flags |= MAT_F_COMPLEX;
     if ( matvar->isGlobal )
@@ -2903,7 +2904,7 @@ WriteCompressedStructField(mat_t *mat,matvar_t *matvar,z_stream *z)
     start = ftell(mat->fp);
 
     /* Array Flags */
-    array_flags = matvar->class_type & MAT_F_CLASS_T;
+    array_flags = matvar->class_type & CLASS_TYPE_MASK;
     if ( matvar->isComplex )
         array_flags |= MAT_F_COMPLEX;
     if ( matvar->isGlobal )
@@ -5697,7 +5698,7 @@ Mat_VarWrite5(mat_t *mat,matvar_t *matvar,int comp)
 
         /* Array Flags */
 
-        array_flags = matvar->class_type & MAT_F_CLASS_T;
+        array_flags = matvar->class_type & CLASS_TYPE_MASK;
         if ( matvar->isComplex )
             array_flags |= MAT_F_COMPLEX;
         if ( matvar->isGlobal )
@@ -5917,7 +5918,7 @@ Mat_VarWrite5(mat_t *mat,matvar_t *matvar,int comp)
         start = ftell(mat->fp);
 
         /* Array Flags */
-        array_flags = matvar->class_type & MAT_F_CLASS_T;
+        array_flags = matvar->class_type & CLASS_TYPE_MASK;
         if ( matvar->isComplex )
             array_flags |= MAT_F_COMPLEX;
         if ( matvar->isGlobal )
@@ -6211,7 +6212,7 @@ WriteInfo5(mat_t *mat, matvar_t *matvar)
 
         /* Array Flags */
 
-        array_flags = matvar->class_type & MAT_F_CLASS_T;
+        array_flags = matvar->class_type & CLASS_TYPE_MASK;
         if ( matvar->isComplex )
             array_flags |= MAT_F_COMPLEX;
         if ( matvar->isGlobal )
