@@ -258,7 +258,7 @@ EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructFieldByIndex(matvar_t *matvar,
                                                             size_t field_index,size_t index);
 EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructFieldByName(matvar_t *matvar,
                                                            const char *field_name,size_t index);
-EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructField(matvar_t *matvar,void *name_or_index,
+EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructField(matvar_t *matvar,const void *name_or_index,
                                                      int opt,int index);
 EXTERN MATIO_EXPORT matvar_t  *Mat_VarGetStructs(matvar_t *matvar,int *start,int *stride,
                                                  int *edge,int copy_fields);

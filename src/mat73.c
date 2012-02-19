@@ -30,7 +30,6 @@
 #include "mat73.h"
 
 static hsize_t perm_dims[10];
-static hsize_t dims1[2] = {1,1};
 
 static const char *Mat_class_names[] = {
     "",
@@ -60,12 +59,14 @@ static enum matio_classes Mat_class_str_to_id(const char *name);
 static hid_t Mat_class_type_to_hid_t(enum matio_classes class_type);
 static hid_t Mat_data_type_to_hid_t(enum matio_types data_type);
 static hid_t Mat_dims_type_to_hid_t(void);
-static void  Mat_H5ReadDatasetInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id);
+static void  Mat_H5ReadDatasetInfo(matvar_t *matvar,hid_t dset_id);
 static void  Mat_H5ReadGroupInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id);
 static void  Mat_H5ReadNextReferenceInfo(hid_t ref_id,matvar_t *matvar,mat_t *mat);
 static void  Mat_H5ReadNextReferenceData(hid_t ref_id,matvar_t *matvar,mat_t *mat);
 static int   Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name);
 static int   Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name);
+
+static hsize_t Mat_sizeof(const matvar_t *matvar);
 
 static enum matio_classes
 Mat_class_str_to_id(const char *name)
@@ -359,6 +360,7 @@ Mat_dims_type_to_hid_t(void)
         return -1;
 }
 
+#if 0
 static void
 Mat_complex_interleaved_to_split(void *data,struct ComplexSplit *complex_data,
     enum matio_types type,size_t numel)
@@ -488,11 +490,14 @@ Mat_complex_interleaved_to_split(void *data,struct ComplexSplit *complex_data,
             }
             break;
         }
+        default:
+            break;
     } /* switch class_type */
 }
+#endif
 
 static void
-Mat_H5ReadDatasetInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id)
+Mat_H5ReadDatasetInfo(matvar_t *matvar,hid_t dset_id)
 {
     ssize_t  name_len;
     /* FIXME */
@@ -594,10 +599,10 @@ static void
 Mat_H5ReadGroupInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id)
 {
     ssize_t  name_len;
-    int      k;
+    //int      k;
     char    **fieldnames = NULL;
     /* FIXME */
-    hsize_t  dims[10],nfields=0,numel;
+    hsize_t  k,dims[10],nfields=0,numel;
     hid_t   attr_id,type_id,space_id,field_id,field_type_id;
     matvar_t **fields;
     H5E_auto_t efunc;
@@ -696,7 +701,6 @@ Mat_H5ReadGroupInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id)
     /* Check if the structure defines its fields in MATLAB_fields */
     attr_id = H5Aopen_name(dset_id,"MATLAB_fields");
     if ( -1 < attr_id ) {
-        int field_length;
         hvl_t     *fieldnames_vl;
         space_id = H5Aget_space(attr_id);
         (void)H5Sget_simple_extent_dims(space_id,&nfields,NULL);
@@ -746,14 +750,15 @@ Mat_H5ReadGroupInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id)
     if ( -1 < (field_id = H5Dopen(dset_id,fieldnames[0],H5P_DEFAULT)) ) {
         field_type_id = H5Dget_type(field_id);
         if ( H5T_REFERENCE == H5Tget_class(field_type_id) ) {
+            int k1;
             space_id        = H5Dget_space(field_id);
             matvar->rank    = H5Sget_simple_extent_ndims(space_id);
             matvar->dims   = malloc(matvar->rank*sizeof(*matvar->dims));
             (void)H5Sget_simple_extent_dims(space_id,dims,NULL);
             numel = 1;
-            for ( k = 0; k < matvar->rank; k++ ) {
-                matvar->dims[k] = dims[matvar->rank - k - 1];
-                numel *= matvar->dims[k];
+            for ( k1 = 0; k1 < matvar->rank; k1++ ) {
+                matvar->dims[k1] = dims[matvar->rank - k1 - 1];
+                numel *= matvar->dims[k1];
             }
             H5Sclose(space_id);
         } else {
@@ -786,7 +791,7 @@ Mat_H5ReadGroupInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id)
     matvar->nbytes    = nfields*numel*matvar->data_size;
     if ( NULL != fields ) {
         for ( k = 0; k < nfields; k++ ) {
-            int l;
+            size_t l;
             fields[k] = NULL;
             if ( -1 < (field_id = H5Dopen(dset_id,fieldnames[k],H5P_DEFAULT)) ) {
                 field_type_id = H5Dget_type(field_id);
@@ -828,9 +833,11 @@ Mat_H5ReadGroupInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id)
                         fields[k] = Mat_VarCalloc();
                         fields[k]->internal->fp   = mat;
                         fields[k]->name = strdup(fieldnames[k]);
-                        Mat_H5ReadDatasetInfo(mat,fields[k],field_id);
+                        Mat_H5ReadDatasetInfo(fields[k],field_id);
                         break;
                     }
+                    default:
+                        break;
                 }
                 H5Dclose(field_id);
             } else if ( -1 <
@@ -850,7 +857,6 @@ Mat_H5ReadGroupInfo(mat_t *mat,matvar_t *matvar,hid_t dset_id)
 static void
 Mat_H5ReadNextReferenceInfo(hid_t ref_id,matvar_t *matvar,mat_t *mat)
 {
-    hid_t       gid;
     H5E_auto_t  efunc;
     void       *client_data;
 
@@ -860,7 +866,6 @@ Mat_H5ReadNextReferenceInfo(hid_t ref_id,matvar_t *matvar,mat_t *mat)
     switch ( H5Iget_type(ref_id) ) {
         case H5I_DATASET:
         {
-            ssize_t  name_len;
             /* FIXME */
             hsize_t  dims[10];
             hid_t   attr_id,type_id,dset_id,space_id;
@@ -944,8 +949,8 @@ Mat_H5ReadNextReferenceInfo(hid_t ref_id,matvar_t *matvar,mat_t *mat)
             /* If the dataset is a cell array read theinfo of the cells */
             if ( MAT_C_CELL == matvar->class_type ) {
                 matvar_t **cells;
-                int i,ncells = 1;
-                hid_t field_id,ref_id,field_type_id;
+                int i;
+                int ncells = 1;
                 hobj_ref_t *ref_ids;
 
                 for ( i = 0; i < matvar->rank; i++ )
@@ -959,14 +964,14 @@ Mat_H5ReadNextReferenceInfo(hid_t ref_id,matvar_t *matvar,mat_t *mat)
                 H5Dread(dset_id,H5T_STD_REF_OBJ,H5S_ALL,H5S_ALL,H5P_DEFAULT,
                         ref_ids);
                 for ( i = 0; i < ncells; i++ ) {
-                    hid_t ref_id;
+                    hid_t refid;
                     cells[i] = Mat_VarCalloc();
                     cells[i]->internal->hdf5_ref = ref_ids[i];
                     /* Closing of ref_id is done in Mat_H5ReadNextReferenceInfo */
-                    ref_id = H5Rdereference(dset_id,H5R_OBJECT,ref_ids+i);
-                    cells[i]->internal->id=ref_id;
+                    refid = H5Rdereference(dset_id,H5R_OBJECT,ref_ids+i);
+                    cells[i]->internal->id=refid;
                     cells[i]->internal->fp=matvar->internal->fp;
-                    Mat_H5ReadNextReferenceInfo(ref_id,cells[i],mat);
+                    Mat_H5ReadNextReferenceInfo(refid,cells[i],mat);
                 }
                 free(ref_ids);
             } else if ( MAT_C_STRUCT == matvar->class_type ) {
@@ -980,7 +985,7 @@ Mat_H5ReadNextReferenceInfo(hid_t ref_id,matvar_t *matvar,mat_t *mat)
                 /* Check if the structure defines its fields in MATLAB_fields */
                 attr_id = H5Aopen_name(dset_id,"MATLAB_fields");
                 if ( -1 < attr_id ) {
-                    int field_length, i;
+                    size_t     i;
                     hid_t      field_id;
                     hsize_t    nfields;
                     hvl_t     *fieldnames_vl;
@@ -1024,13 +1029,8 @@ Mat_H5ReadNextReferenceInfo(hid_t ref_id,matvar_t *matvar,mat_t *mat)
         case H5I_GROUP:
         {
             ssize_t  name_len;
-            int      k;
-            char    **fieldnames = NULL;
             /* FIXME */
-            hsize_t  dims[10],nfields,numel;
-            hid_t   attr_id,type_id,dset_id,space_id,field_id,field_type_id;
-            matvar_t **fields;
-
+            hid_t    dset_id;
             dset_id = ref_id;
 
             /* Get the HDF5 name of the variable */
@@ -1059,8 +1059,8 @@ static void
 Mat_H5ReadNextReferenceData(hid_t ref_id,matvar_t *matvar,mat_t *mat)
 {
     int k;
-    size_t numel;
-    hid_t fid,dset_id;
+    size_t numel, k1;
+    hid_t  dset_id;
 
     if( ref_id < 0 || matvar == NULL)
         return;
@@ -1074,8 +1074,8 @@ Mat_H5ReadNextReferenceData(hid_t ref_id,matvar_t *matvar,mat_t *mat)
         numel = 1;
         for ( k = 0; k < matvar->rank; k++ )
             numel *= matvar->dims[k];
-        for ( k = 0; k < numel; k++ )
-            Mat_H5ReadNextReferenceData(cells[k]->internal->id,cells[k],mat);
+        for ( k1 = 0; k1 < numel; k1++ )
+            Mat_H5ReadNextReferenceData(cells[k1]->internal->id,cells[k1],mat);
         return;
     }
 
@@ -1144,7 +1144,6 @@ Mat_H5ReadNextReferenceData(hid_t ref_id,matvar_t *matvar,mat_t *mat)
         {
             matvar_t **fields;
             int i,nfields = 0;
-            hid_t field_id,ref_id,field_type_id;
 
             if ( MAT_C_SPARSE == matvar->class_type ) {
                 Mat_VarRead73(mat,matvar);
@@ -1174,7 +1173,8 @@ Mat_H5ReadNextReferenceData(hid_t ref_id,matvar_t *matvar,mat_t *mat)
 static int
 Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
 {
-    unsigned long k,numel;
+    int k;
+    unsigned long numel = 0;
     hid_t mspace_id,dset_id,attr_type_id,attr_id,aspace_id;
 
     if ( NULL == matvar )
@@ -1346,6 +1346,8 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
                             Mat_class_type_to_hid_t(MAT_C_UINT16),mspace_id,
                             H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
                         break;
+                    default:
+                        break;
                 }
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
@@ -1380,9 +1382,7 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
             char       id_name[128] = {'\0',};
             int        is_ref;
 
-            nmemb = matvar->dims[0];
-            for ( k = 1; k < matvar->rank; k++ )
-                nmemb *= matvar->dims[k];
+            nmemb = Mat_sizeof(matvar);
  
             if ( 0 == nmemb || NULL == matvar->data ) {
                 hsize_t rank = matvar->rank;
@@ -1411,12 +1411,13 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
 
                 nfields = matvar->nbytes / (matvar->data_size);
                 if ( nfields ) {
+                    hsize_t k1;
                     str_type_id = H5Tcopy(H5T_C_S1);
                     fieldnames = malloc(nfields*sizeof(*fieldnames));
                     fields     = matvar->data;
-                    for ( k = 0; k < nfields; k++ ) {
-                        fieldnames[k].len = strlen(fields[k]->name);
-                        fieldnames[k].p   = fields[k]->name;
+                    for ( k1 = 0; k1 < nfields; k1++ ) {
+                        fieldnames[k1].len = strlen(fields[k1]->name);
+                        fieldnames[k1].p   = fields[k1]->name;
                     }
                     H5Tset_size(str_type_id,1);
                     fieldnames_id = H5Tvlen_create(str_type_id);
@@ -1444,6 +1445,7 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
                 if ( struct_id < 0 ) {
                     Mat_Critical("Error creating group for struct %s",name);
                 } else {
+                    hsize_t k1;
                     str_type_id = H5Tcopy(H5T_C_S1);
                     H5Tset_size(str_type_id,7);
                     aspace_id = H5Screate(H5S_SCALAR);
@@ -1462,9 +1464,9 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
 
                     fieldnames = malloc(nfields*sizeof(*fieldnames));
                     fields     = matvar->data;
-                    for ( k = 0; k < nfields; k++ ) {
-                        fieldnames[k].len = strlen(fields[k]->name);
-                        fieldnames[k].p   = fields[k]->name;
+                    for ( k1 = 0; k1 < nfields; k1++ ) {
+                        fieldnames[k1].len = strlen(fields[k1]->name);
+                        fieldnames[k1].p   = fields[k1]->name;
                     }
                     H5Tset_size(str_type_id,1);
                     fieldnames_id = H5Tvlen_create(str_type_id);
@@ -1479,9 +1481,9 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
                     free(fieldnames);
 
                     if ( 1 == nmemb ) {
-                        for ( k = 0; k < nmemb*nfields; k++ )
-                            Mat_WriteNextStructField73(struct_id,fields[k],
-                                fields[k]->name);
+                        for ( k1 = 0; k1 < nmemb*nfields; k1++ )
+                            Mat_WriteNextStructField73(struct_id,fields[k1],
+                                fields[k1]->name);
                     } else {
                         hid_t refs_id;
 
@@ -1494,23 +1496,23 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
                                               H5P_DEFAULT,H5P_DEFAULT);
                         }
                         if ( refs_id > -1 ) {
-                            char name[64];
+                            char name1[64];
                             hobj_ref_t **refs;
                             hsize_t      num_obj;
-                            int l;
+                            hsize_t      k2,l;
 
                             refs = malloc(nfields*sizeof(*refs));
                             for ( l = 0; l < nfields; l++ )
                                 refs[l] = malloc(nmemb*sizeof(*refs[l]));
 
-                            for ( k = 0; k < nmemb; k++ ) {
+                            for ( k2 = 0; k2 < nmemb; k2++ ) {
                                 for ( l = 0; l < nfields; l++ ) {
                                     (void)H5Gget_num_objs(refs_id,&num_obj);
-                                    sprintf(name,"%lu",num_obj);
+                                    sprintf(name1,"%lu",(unsigned long) num_obj);
                                     Mat_WriteNextStructField73(refs_id,
-                                        fields[k*nfields+l],name);
-                                    sprintf(name,"/#refs#/%lu",num_obj);
-                                    H5Rcreate(refs[l]+k,id,name,
+                                        fields[k2*nfields+l],name1);
+                                    sprintf(name1,"/#refs#/%lu",(unsigned long) num_obj);
+                                    H5Rcreate(refs[l]+k2,id,name1,
                                               H5R_OBJECT,-1);
                                 }
                             }
@@ -1550,9 +1552,7 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
             char       id_name[128] = {'\0',};
 
             cells = matvar->data;
-            nmemb = matvar->dims[0];
-            for ( k = 1; k < matvar->rank; k++ )
-                nmemb *= matvar->dims[k];
+            nmemb = Mat_sizeof(matvar);
 
             if ( 0 == nmemb || NULL == matvar->data ) {
                 hsize_t rank = matvar->rank;
@@ -1603,19 +1603,19 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
                 if ( refs_id > -1 ) {
                     char        obj_name[64];
                     hobj_ref_t *refs;
-                    hsize_t     num_obj;
+                    hsize_t     k2,num_obj;
 
                     refs = malloc(nmemb*sizeof(*refs));
                     mspace_id=H5Screate_simple(matvar->rank,perm_dims,NULL);
                     dset_id = H5Dcreate(id,name,H5T_STD_REF_OBJ,mspace_id,
                                         H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
 
-                    for ( k = 0; k < nmemb; k++ ) {
+                    for ( k2 = 0; k2 < nmemb; k2++ ) {
                         (void)H5Gget_num_objs(refs_id,&num_obj);
-                        sprintf(obj_name,"%lu",num_obj);
-                        Mat_WriteNextCellField73(refs_id,cells[k],obj_name);
-                        sprintf(obj_name,"/#refs#/%lu",num_obj);
-                        H5Rcreate(refs+k,id,obj_name,H5R_OBJECT,-1);
+                        sprintf(obj_name,"%lu",(unsigned long) num_obj);
+                        Mat_WriteNextCellField73(refs_id,cells[k2],obj_name);
+                        sprintf(obj_name,"/#refs#/%lu",(unsigned long) num_obj);
+                        H5Rcreate(refs+k2,id,obj_name,H5R_OBJECT,-1);
                     }
                     for ( k = 0; k < matvar->rank; k++ )
                         perm_dims[k] = matvar->dims[matvar->rank-k-1];
@@ -1641,6 +1641,8 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
             }
             break;
         }
+        default:
+            break;
     }
     return 0;
 }
@@ -1648,7 +1650,8 @@ Mat_WriteNextStructField73(hid_t id,matvar_t *matvar,const char *name)
 static int
 Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
 {
-    unsigned long k,numel;
+    int           k2;
+    unsigned long k,numel = 0;
     hid_t mspace_id,dset_id,attr_type_id,attr_id,aspace_id;
 
     if ( NULL == matvar )
@@ -1666,9 +1669,9 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
         case MAT_C_INT8:
         case MAT_C_UINT8:
             numel = 1;
-            for ( k = 0; k < matvar->rank; k++ ) {
-                perm_dims[k] = matvar->dims[matvar->rank-k-1];
-                numel *= perm_dims[k];
+            for ( k2 = 0; k2 < matvar->rank; k2++ ) {
+                perm_dims[k2] = matvar->dims[matvar->rank-k2-1];
+                numel *= perm_dims[k2];
             }
 
             if ( 0 == numel || NULL == matvar->data ) {
@@ -1796,9 +1799,9 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
                 H5Dclose(dset_id);
                 H5Sclose(mspace_id);
             } else {
-                int matlab_int_decode = 2;
-                for ( k = 0; k < matvar->rank; k++ )
-                    perm_dims[k] = matvar->dims[matvar->rank-k-1];
+                int matlab_int_decode = 2,k1;
+                for ( k1 = 0; k1 < matvar->rank; k1++ )
+                    perm_dims[k1] = matvar->dims[matvar->rank-k1-1];
 
                 mspace_id = H5Screate_simple(matvar->rank,perm_dims,NULL);
                 switch ( matvar->data_type ) {
@@ -1819,6 +1822,8 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
                         dset_id = H5Dcreate(id,name,
                             Mat_class_type_to_hid_t(MAT_C_UINT16),mspace_id,
                             H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+                        break;
+                    default:
                         break;
                 }
                 attr_type_id = H5Tcopy(H5T_C_S1);
@@ -1852,11 +1857,9 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
             matvar_t **fields;
             hvl_t     *fieldnames;
             char       id_name[128] = {'\0',};
-            int        is_ref;
+            int        k1,is_ref;
 
-            nmemb = matvar->dims[0];
-            for ( k = 1; k < matvar->rank; k++ )
-                nmemb *= matvar->dims[k];
+            nmemb = Mat_sizeof(matvar);
  
             if ( 0 == nmemb || NULL == matvar->data ) {
                 hsize_t rank = matvar->rank;
@@ -1971,8 +1974,7 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
                         if ( refs_id > -1 ) {
                             char obj_name[64];
                             hobj_ref_t **refs;
-                            hsize_t      num_obj;
-                            int l;
+                            hsize_t      num_obj,l;
 
                             refs = malloc(nfields*sizeof(*refs));
                             for ( l = 0; l < nfields; l++ )
@@ -1981,16 +1983,16 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
                             for ( k = 0; k < nmemb; k++ ) {
                                 for ( l = 0; l < nfields; l++ ) {
                                     (void)H5Gget_num_objs(refs_id,&num_obj);
-                                    sprintf(obj_name,"%lu",num_obj);
+                                    sprintf(obj_name,"%lu",(unsigned long) num_obj);
                                     Mat_WriteNextStructField73(refs_id,
                                         fields[k*nfields+l],obj_name);
-                                    sprintf(obj_name,"/#refs#/%lu",num_obj);
+                                    sprintf(obj_name,"/#refs#/%lu",(unsigned long) num_obj);
                                     H5Rcreate(refs[l]+k,id,obj_name,
                                               H5R_OBJECT,-1);
                                 }
                             }
-                            for ( k = 0; k < matvar->rank; k++ )
-                                perm_dims[k] = matvar->dims[matvar->rank-k-1];
+                            for ( k1 = 0; k1 < matvar->rank; k1++ )
+                                perm_dims[k1] = matvar->dims[matvar->rank-k1-1];
 
                             mspace_id=H5Screate_simple(matvar->rank,perm_dims,NULL);
                             for ( l = 0; l < nfields; l++ ) {
@@ -2025,9 +2027,7 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
             char       id_name[128] = {'\0',};
 
             cells = matvar->data;
-            nmemb = matvar->dims[0];
-            for ( k = 1; k < matvar->rank; k++ )
-                nmemb *= matvar->dims[k];
+            nmemb = Mat_sizeof(matvar);
 
             if ( 0 == nmemb || NULL == matvar->data ) {
                 hsize_t rank = matvar->rank;
@@ -2077,6 +2077,7 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
                 
                 if ( refs_id > -1 ) {
                     char        obj_name[64];
+                    int         k1;
                     hobj_ref_t *refs;
                     hsize_t     num_obj;
 
@@ -2087,13 +2088,13 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
 
                     for ( k = 0; k < nmemb; k++ ) {
                         (void)H5Gget_num_objs(refs_id,&num_obj);
-                        sprintf(obj_name,"%lu",num_obj);
+                        sprintf(obj_name,"%lu",(unsigned long) num_obj);
                         Mat_WriteNextCellField73(refs_id,cells[k],obj_name);
-                        sprintf(obj_name,"/#refs#/%lu",num_obj);
+                        sprintf(obj_name,"/#refs#/%lu",(unsigned long) num_obj);
                         H5Rcreate(refs+k,id,obj_name,H5R_OBJECT,-1);
                     }
-                    for ( k = 0; k < matvar->rank; k++ )
-                        perm_dims[k] = matvar->dims[matvar->rank-k-1];
+                    for ( k1 = 0; k1 < matvar->rank; k1++ )
+                        perm_dims[k1] = matvar->dims[matvar->rank-k1-1];
 
                     H5Dwrite(dset_id,H5T_STD_REF_OBJ,H5S_ALL,H5S_ALL,
                             H5P_DEFAULT,refs);
@@ -2116,8 +2117,22 @@ Mat_WriteNextCellField73(hid_t id,matvar_t *matvar,const char *name)
             }
             break;
         }
+        default:
+            break;
     }
     return 0;
+}
+
+static hsize_t
+Mat_sizeof(const matvar_t *matvar)
+{
+    hsize_t nmemb;
+    int     k;
+
+    nmemb = matvar->dims[0];
+    for ( k = 1; k < matvar->rank; k++ )
+        nmemb *= matvar->dims[k];
+    return nmemb;
 }
 
 /** @if mat_devman
@@ -2152,15 +2167,15 @@ Mat_Create73(const char *matname,const char *hdr_str)
     H5Fclose(fid);
     H5Pclose(plist_id);
 
-    fp = fopen(matname,"r+b");
+    fp = matio_open(matname,"r+b");
     if ( !fp )
         return NULL;
 
-    fseek(fp,0,SEEK_SET);
+    matio_seek(fp,0,SEEK_SET);
 
     mat = malloc(sizeof(*mat));
     if ( !mat ) {
-        fclose(fp);
+        matio_close(fp);
         return NULL;
     }
 
@@ -2196,12 +2211,12 @@ Mat_Create73(const char *matname,const char *hdr_str)
 
     version = 0x0200;
 
-    err = fwrite(mat->header,1,116,fp);
-    err = fwrite(mat->subsys_offset,1,8,fp);
-    err = fwrite(&version,2,1,fp);
-    err = fwrite(&endian,2,1,fp);
+    err = matio_write(mat->header,1,116,fp);
+    err = matio_write(mat->subsys_offset,1,8,fp);
+    err = matio_write(&version,2,1,fp);
+    err = matio_write(&endian,2,1,fp);
 
-    fclose(fp);
+    matio_close(fp);
 
     fid = H5Fopen(matname,H5F_ACC_RDWR,H5P_DEFAULT);
 
@@ -2313,7 +2328,6 @@ Mat_VarRead73(mat_t *mat,matvar_t *matvar)
         {
             matvar_t **fields;
             int i,nfields = 0;
-            hid_t field_id,ref_id,field_type_id;
 
             if ( !matvar->nbytes || !matvar->data_size || NULL == matvar->data )
                 break;
@@ -2334,7 +2348,6 @@ Mat_VarRead73(mat_t *mat,matvar_t *matvar)
         {
             matvar_t **cells;
             int i,ncells = 0;
-            hid_t field_id,ref_id,field_type_id;
 
             if ( NULL != matvar->internal->hdf5_name ) {
                 dset_id = H5Dopen(fid,matvar->internal->hdf5_name,H5P_DEFAULT);
@@ -2437,6 +2450,8 @@ Mat_VarRead73(mat_t *mat,matvar_t *matvar)
             matvar->data = sparse_data;
             break;
         }
+        default:
+            break;
     }
 }
 
@@ -2451,7 +2466,7 @@ Mat_VarRead73(mat_t *mat,matvar_t *matvar)
 matvar_t *
 Mat_VarReadNextInfo73( mat_t *mat )
 {
-    hid_t       fid,gid;
+    hid_t       fid;
     hsize_t     num_objs;
     H5E_auto_t  efunc;
     void       *client_data;
@@ -2463,7 +2478,7 @@ Mat_VarReadNextInfo73( mat_t *mat )
     fid = *(hid_t*)mat->fp;
     H5Gget_num_objs(fid,&num_objs);
     /* FIXME: follow symlinks, datatypes? */
-    while ( mat->next_index < num_objs ) {
+    while ( (hsize_t) mat->next_index < num_objs ) {
         if ( H5G_DATASET == H5Gget_objtype_by_idx(fid,mat->next_index) ) {
             break;
         } else if ( H5G_GROUP == H5Gget_objtype_by_idx(fid,mat->next_index) ) {
@@ -2479,7 +2494,7 @@ Mat_VarReadNextInfo73( mat_t *mat )
         }
     }
 
-    if ( mat->next_index >= num_objs )
+    if ( (hsize_t) mat->next_index >= num_objs )
         return NULL;
     else if ( NULL == (matvar = Mat_VarCalloc()) )
         return NULL;
@@ -2583,7 +2598,6 @@ Mat_VarReadNextInfo73( mat_t *mat )
             if ( MAT_C_CELL == matvar->class_type ) {
                 matvar_t **cells;
                 int i,ncells = 1;
-                hid_t field_id,ref_id,field_type_id;
                 hobj_ref_t *ref_ids;
 
                 for ( i = 0; i < matvar->rank; i++ )
@@ -2622,9 +2636,8 @@ Mat_VarReadNextInfo73( mat_t *mat )
                 /* Check if the structure defines its fields in MATLAB_fields */
                 attr_id = H5Aopen_name(dset_id,"MATLAB_fields");
                 if ( -1 < attr_id ) {
-                    int field_length, i;
                     hid_t      field_id;
-                    hsize_t    nfields;
+                    hsize_t    i,nfields;
                     hvl_t     *fieldnames_vl;
                     matvar_t **fields;
 
@@ -2664,12 +2677,8 @@ Mat_VarReadNextInfo73( mat_t *mat )
         case H5G_GROUP:
         {
             ssize_t  name_len;
-            int      k;
-            char    **fieldnames = NULL;
             /* FIXME */
-            hsize_t  dims[10],nfields,numel;
-            hid_t   attr_id,type_id,dset_id,space_id,field_id,field_type_id;
-            matvar_t **fields;
+            hid_t    dset_id;
 
             matvar->internal->fp = mat;
             name_len = H5Gget_objname_by_idx(fid,mat->next_index,NULL,0);
@@ -2698,14 +2707,15 @@ Mat_VarReadNextInfo73( mat_t *mat )
  * @ingroup mat_internal
  * @param mat MAT file pointer
  * @param matvar pointer to the mat variable
- * @param compress option to compress the variable
+ * @param comp option to compress the variable
  *                 (only works for numeric types)
  * @retval 0 on success
  * @endif
  */
 int
-Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
+Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int comp)
 {
+    int k2;
     unsigned long k,numel;
     hid_t mspace_id,dset_id,attr_type_id,attr_id,aspace_id;
 
@@ -2724,9 +2734,9 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
         case MAT_C_INT8:
         case MAT_C_UINT8:
             numel = 1;
-            for ( k = 0; k < matvar->rank; k++ ) {
-                perm_dims[k] = matvar->dims[matvar->rank-k-1];
-                numel *= perm_dims[k];
+            for ( k2 = 0; k2 < matvar->rank; k2++ ) {
+                perm_dims[k2] = matvar->dims[matvar->rank-k2-1];
+                numel *= perm_dims[k2];
             }
 
             if ( 0 == numel || NULL == matvar->data ) {
@@ -2826,10 +2836,11 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
             break;
         case MAT_C_CHAR:
         {
+            int k1;
             numel = 1;
-            for ( k = 0; k < matvar->rank; k++ ) {
-                perm_dims[k] = matvar->dims[matvar->rank-k-1];
-                numel *= perm_dims[k];
+            for ( k1 = 0; k1 < matvar->rank; k1++ ) {
+                perm_dims[k1] = matvar->dims[matvar->rank-k1-1];
+                numel *= perm_dims[k1];
             }
             if ( 0 == numel || NULL == matvar->data ) {
                 hsize_t rank = matvar->rank;
@@ -2884,6 +2895,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                             Mat_class_type_to_hid_t(MAT_C_UINT16),mspace_id,
                             H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
                         break;
+                    default:
+                        break;
                 }
                 attr_type_id = H5Tcopy(H5T_C_S1);
                 H5Tset_size(attr_type_id,
@@ -2916,9 +2929,7 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
             matvar_t **fields;
             hvl_t     *fieldnames;
 
-            nmemb = matvar->dims[0];
-            for ( k = 1; k < matvar->rank; k++ )
-                nmemb *= matvar->dims[k];
+            nmemb = Mat_sizeof(matvar);
  
             if ( 0 == nmemb || NULL == matvar->data ) {
                 hsize_t rank = matvar->rank;
@@ -3032,10 +3043,10 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                         H5Eset_auto(H5E_DEFAULT,efunc,client_data);
                     
                         if ( refs_id > -1 ) {
+                            int  k1;
                             char name[64];
                             hobj_ref_t **refs;
-                            hsize_t      num_obj;
-                            int l;
+                            hsize_t      num_obj,l;
 
                             refs = malloc(nfields*sizeof(*refs));
                             for ( l = 0; l < nfields; l++ )
@@ -3044,16 +3055,16 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                             for ( k = 0; k < nmemb; k++ ) {
                                 for ( l = 0; l < nfields; l++ ) {
                                     (void)H5Gget_num_objs(refs_id,&num_obj);
-                                    sprintf(name,"%lu",num_obj);
+                                    sprintf(name,"%lu",(unsigned long) num_obj);
                                     Mat_WriteNextStructField73(refs_id,
                                         fields[k*nfields+l],name);
-                                    sprintf(name,"/#refs#/%lu",num_obj);
+                                    sprintf(name,"/#refs#/%lu",(unsigned long) num_obj);
                                     H5Rcreate(refs[l]+k,*(hid_t*)mat->fp,name,
                                               H5R_OBJECT,-1);
                                 }
                             }
-                            for ( k = 0; k < matvar->rank; k++ )
-                                perm_dims[k] = matvar->dims[matvar->rank-k-1];
+                            for ( k1 = 0; k1 < matvar->rank; k1++ )
+                                perm_dims[k1] = matvar->dims[matvar->rank-k1-1];
 
                             mspace_id=H5Screate_simple(matvar->rank,perm_dims,NULL);
                             for ( l = 0; l < nfields; l++ ) {
@@ -3085,9 +3096,7 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
             void       *client_data;
 
             cells = matvar->data;
-            nmemb = matvar->dims[0];
-            for ( k = 1; k < matvar->rank; k++ )
-                nmemb *= matvar->dims[k];
+            nmemb = Mat_sizeof(matvar);
 
             if ( 0 == nmemb || NULL == matvar->data ) {
                 hsize_t rank = matvar->rank;
@@ -3132,6 +3141,7 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                 H5Eset_auto(H5E_DEFAULT,efunc,client_data);
                 
                 if ( refs_id > -1 ) {
+                    int         k1;
                     char        name[64];
                     hobj_ref_t *refs;
                     hsize_t     num_obj;
@@ -3140,13 +3150,13 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
 
                     for ( k = 0; k < nmemb; k++ ) {
                         (void)H5Gget_num_objs(refs_id,&num_obj);
-                        sprintf(name,"%lu",num_obj);
+                        sprintf(name,"%lu",(unsigned long) num_obj);
                         Mat_WriteNextCellField73(refs_id,cells[k],name);
-                        sprintf(name,"/#refs#/%lu",num_obj);
+                        sprintf(name,"/#refs#/%lu",(unsigned long) num_obj);
                         H5Rcreate(refs+k,*(hid_t*)mat->fp,name,H5R_OBJECT,-1);
                     }
-                    for ( k = 0; k < matvar->rank; k++ )
-                        perm_dims[k] = matvar->dims[matvar->rank-k-1];
+                    for ( k1 = 0; k1 < matvar->rank; k1++ )
+                        perm_dims[k1] = matvar->dims[matvar->rank-k1-1];
 
                     mspace_id=H5Screate_simple(matvar->rank,perm_dims,NULL);
                     dset_id = H5Dcreate(*(hid_t*)mat->fp,matvar->name,
@@ -3174,16 +3184,10 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
         }
         case MAT_C_SPARSE:
         {
-            hid_t str_type_id, sparse_id;
-            hsize_t    nmemb;
-            matvar_t **cells;
-            hid_t refs_id;
-            H5E_auto_t efunc;
-            void       *client_data;
+            hid_t   sparse_id;
+            hsize_t nmemb;
 
-            nmemb = matvar->dims[0];
-            for ( k = 1; k < matvar->rank; k++ )
-                nmemb *= matvar->dims[k];
+            nmemb = Mat_sizeof(matvar);
 
             sparse_id = H5Gcreate(*(hid_t*)mat->fp,matvar->name,H5P_DEFAULT,
                             H5P_DEFAULT,H5P_DEFAULT);
@@ -3224,7 +3228,6 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
                 mspace_id = H5Screate_simple(1,&ndata,NULL);
                 if ( matvar->isComplex ) {
                     hid_t h5_complex,h5_complex_base;
-                    void *buf;
                     struct ComplexSplit *complex_data;
 
                     complex_data = sparse->data;
@@ -3293,6 +3296,8 @@ Mat_VarWrite73(mat_t *mat,matvar_t *matvar,int compress)
             }
             break;
         }
+        default:
+            break;
     }
     return 0;
 }

@@ -1,5 +1,5 @@
 SET(HEADERS matio_private.h mat4.h mat5.h matio.h matioConfig.h)
-SET(SRC_FILES mat.c mat4.c mat5.c io.c endian.c read_data.c snprintf.c)
+SET(SRC_FILES matio_io.c mat.c mat4.c mat5.c io.c endian.c read_data.c snprintf.c)
 IF (Z_LIBRARY)
     SET(SRC_FILES ${SRC_FILES} inflate.c)
 ENDIF()

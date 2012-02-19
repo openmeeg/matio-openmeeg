@@ -3,16 +3,41 @@ IF(NOT WIN32)
 ENDIF()
 
 ADD_EXECUTABLE(test_mat test_mat.c)
-TARGET_LINK_LIBRARIES(test_mat matio ${MATIO_EXTERNAL_LIBRARIES})
+TARGET_LINK_LIBRARIES(test_mat matio ${MATIO_EXTERNAL_LIBRARIES} ${GETOPT_LIB})
 
 ADD_EXECUTABLE(test_snprintf test_snprintf.c ${MATIO_SOURCE_DIR}/src/snprintf.c)
-TARGET_LINK_LIBRARIES(test_snprintf ${MATIO_EXTERNAL_LIBRARIES})
+TARGET_LINK_LIBRARIES(test_snprintf ${MATIO_EXTERNAL_LIBRARIES} ${GETOPT_LIB})
+
+MACRO(PARSE_TEST_ARGUMENTS LIST_VARS DEFAULT_VAR)
+    foreach(var ${LIST_VARS})
+        unset(${var})
+    endforeach ()
+
+    set(CURRENT_VAR ${DEFAULT_VAR})
+    foreach (arg ${ARGN})
+        set(skip_this_arg FALSE)
+        foreach(var ${LIST_VARS})
+            if (${arg} STREQUAL ${var})
+                set(CURRENT_VAR ${var})
+                set(skip_this_arg TRUE)
+                BREAK()
+            endif()
+        endforeach ()
+        if (NOT skip_this_arg)
+            set(${CURRENT_VAR} ${${CURRENT_VAR}} ${arg})
+        endif()
+    endforeach ()
+ENDMACRO()
 
 MACRO(MATIO_TEST NAME FILENAME OUTPUT PROG_NAME)
+    PARSE_TEST_ARGUMENTS("COMMAND;DEPENDS" "DEFAULT" ${ARGN})
     SET(PROG_ARGS "${ARGN}")
     SEPARATE_ARGUMENTS(ARGS UNIX_COMMAND "${PROG_ARGS}")
     IF (WIN32)
-        SET (TEST_DIR ${EXECUTABLE_OUTPUT_PATH})
+        IF (NOT CMAKE_BUILD_TYPE)
+            SET(CMAKE_BUILD_TYPE Debug)
+        ENDIF()
+        SET (TEST_DIR ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE})
     ELSE ()
         SET (TEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
     ENDIF ()
@@ -22,7 +47,7 @@ MACRO(MATIO_TEST NAME FILENAME OUTPUT PROG_NAME)
     ADD_TEST(${NAME}-COMPARISON
              ${CMAKE_COMMAND} -D TEST_DIR:STRING=${TEST_DIR}
                               -D TEST_NAME:STRING=${NAME}
-                              -D TEST_REFERENCE_DIR:STRING=${CMAKE_SOURCE_DIR}/test/results
+                              -D TEST_REFERENCE_DIR:STRING=${MATIO_SOURCE_DIR}/test/results
                               -D TEST_PROGRAM:STRING=${EXECUTABLE}
                               -D TEST_ARGS:STRING=${ARGS}
                               -D TEST_RESULT:STRING=${FILENAME}
@@ -45,10 +70,10 @@ SET(MATIO_WRITE_TESTS_SPARSE write_sparse write_complex_sparse)
 SET(MATIO_WRITE_TESTS ${MATIO_WRITE_TESTS_NUMERIC} ${MATIO_WRITE_TESTS_SPARSE}
     write_char write_empty_struct 
     write_empty_cell
-    writeinf writenan writeslab)
+    writeinf writenull writenan writeslab)
 
 SET(MATIO_FILES)
-FOREACH(arg ${MATIO_WRITE_TESTS_NUMERIC} ${MATIO_WRITE_TESTS_SPARSE} write_empty_cell write_empty_struct writeinf writenan writeslab)
+FOREACH(arg ${MATIO_WRITE_TESTS})
     SET(VERSIONS 4 5)
     IF (NOT ${arg} STREQUAL "writeslab")
         IF (MAT73)
@@ -69,60 +94,67 @@ FOREACH(arg ${MATIO_WRITE_TESTS_NUMERIC} ${MATIO_WRITE_TESTS_SPARSE} write_empty
     ENDFOREACH()
 ENDFOREACH()
 
+SET(MATIO_OTHER_FILES writeinf writenan writenull writeslab)
+FOREACH(arg ${MATIO_OTHER_FILES})
+    SET(testname ${arg})
+    SET(filename test_${testname}.mat)
+    IF (${arg} STREQUAL "writenull")
+        SET(filename test_write_null.mat)
+    ENDIF()
+    SET(MATIO_FILES ${MATIO_FILES} ${filename})
+    MATIO_TEST(MATIO-${testname} ${filename} Null.out test_mat ${arg})
+ENDFOREACH()
+
 SET(MATIO_IND_TESTS ind2sub sub2ind)
 FOREACH(arg ${MATIO_IND_TESTS})
-    MATIO_TEST(MATIO-${arg} NONE MATIO-${arg}.out test_mat ${arg})
+    SET(TEST_REFERENCE MATIO-${arg}.out)
+    IF (WIN32)
+        SET(TEST_REFERENCE MATIO-${arg}-win.out)
+    ENDIF()
+    MATIO_TEST(MATIO-${arg} NONE ${TEST_REFERENCE} test_mat ${arg})
 ENDFOREACH()
 
-FOREACH(file ${MATIO_FILES})
-    MATIO_TEST(MATIO-copy-${file} copy_${file} Copy.out test_mat copy ${file} -o copy_${file})
-ENDFOREACH()
+#SET(DATASETS d f i64 ui64 i32 i16 i8 str)
+#FOREACH(file ${MATIO_FILES})
+#    MATIO_TEST(MATIO-copy-${file} copy_${file} Copy.out test_mat copy ${file} -o copy_${file})
+#    FOREACH (var ${DATASETS})
+#        ADD_TEST(MATIO-delete-${file} test_mat delete ${file} ${var})
+#    ENDFOREACH()
+#ENDFOREACH()
 
-SET(DATASETS d f i64 ui64 i32 i16 i8 str)
-SET(MATIO_OTHER_FILES writeinf writenan write_null)
-FOREACH(file ${MATIO_FILES})
-#    MATIO_TEST(MATIO-copy-${file} test_mat copy test_${file}.mat)
-#MATIO_TEST(MATIO-delete-${file} test_mat delete test_mat_copy.mat) Need to specify a variable name...
-ENDFOREACH()
+#SET(MATIO_WRITESLAB_VARS d f i)
+#FOREACH(var ${MATIO_WRITESLAB_VARS})
+#    MATIO_TEST(MATIO-readslab-${var} "" test_readslab_${var}.out test_mat readslab test_mat_writeslab.mat ${var})
+#ENDFOREACH()
 
-#   Record the output and compare it with stored values ??
-
-SET(MATIO_WRITE_VARS d f i64 ui64 i32 i16 i8 str)
-FOREACH(file write write_compressed)
-    FOREACH(var ${MATIO_WRITE_VARS})
-#        MATIO_TEST(MATIO-readvarinfo-${file}-${var} test_mat readvarinfo test_${file}.mat a)
-#        MATIO_TEST(MATIO-readvar-${file}-${var} test_mat readvar test_${file}.mat ${var})
-    ENDFOREACH()
-ENDFOREACH()
-
-FOREACH(file writecell write_compressed_cell)
-#    MATIO_TEST(MATIO-readvarinfo-${file} test_mat readvarinfo test_mat_${file}.mat cell)
-#    MATIO_TEST(MATIO-readvar-${file} test_mat readvar test_mat_${file}.mat cell)
-ENDFOREACH()
-
-SET(MATIO_WRITESLAB_VARS d f i)
-FOREACH(var ${MATIO_WRITESLAB_VARS})
-#    MATIO_TEST(MATIO-readslab-${var} test_mat readslab test_mat_writeslab.mat ${var})
-ENDFOREACH()
-
-FOREACH(file write_struct write_compressed_struct)
-    FOREACH(field 1 2 3 4 data)
-#        MATIO_TEST(MATIO-getstructfield-${file}-${field} test_mat getstructfield test_mat_${file}.mat structure ${var})
-    ENDFOREACH()
-ENDFOREACH()
+#FOREACH(arg write_struct_2d_numeric write_struct_complex_2d_numeric)
+#    SET(VERSIONS 4 5)
+#    IF (MAT73)
+#        SET(VERSIONS ${VERSIONS} 7.3)
+#    ENDIF()
+#    FOREACH(field 1 2)
+#        FOREACH(class double single int64 uint64 int32 uint32 int16 uint16 int8 uint8)
+#            FOREACH (version ${VERSIONS})
+#                SET(testname ${arg}-${class}-${version})
+#                SET(filename test_${testname}.mat)
+#                SET(testname getstructfield-${testname})
+#                MATIO_TEST(MATIO-${testname} "" ${testname}.out test_mat getstructfield ${filename} a field${field})
+#                IF (${version} STREQUAL "5")
+#                    SET(testname ${arg}-${class}-${version}-compressed)
+#                    SET(filename test_${testname}.mat)
+#                    SET(testname getstructfield-${testname})
+#                    MATIO_TEST(MATIO-${testname} "" ${testname}.out test_mat getstructfield ${filename} a field${field})
+#                ENDIF() 
+#            ENDFOREACH()
+#        ENDFOREACH()
+#    ENDFOREACH()
+#ENDFOREACH()
 
 # Add more tests for these.
 
 SET(MATIO_READ_TESTS readvar4 readslab4 slab3)
 
 # Set tests that are expected to fail (TO BE CORRECTED).
-
-#SET_TESTS_PROPERTIES(MATIO-writenull PROPERTIES WILL_FAIL TRUE)
-#SET_TESTS_PROPERTIES(MATIO-writenull-COMPARISON PROPERTIES WILL_FAIL TRUE)
-#SET_TESTS_PROPERTIES(MATIO-copy-write_null PROPERTIES WILL_FAIL TRUE)
-
-#SET_TESTS_PROPERTIES(MATIO-readvarinfo-write_compressed_cell PROPERTIES WILL_FAIL TRUE)
-#SET_TESTS_PROPERTIES(MATIO-readvar-write_compressed_cell PROPERTIES WILL_FAIL TRUE)
 
 IF (ENABLE_FORTRAN)
     INCLUDE_DIRECTORIES(${MATIO_SOURCE_DIR}/src/fortran ${MATIO_BINARY_DIR}/src/fortran)

@@ -87,6 +87,8 @@ Mat_PrintNumber(enum matio_types type, void *data)
         case MAT_T_UINT8:
             printf("%hhu",*(mat_uint8_t*)data);
             break;
+        default:
+            break;
     }
 }
 
@@ -148,11 +150,11 @@ Mat_Open(const char *matname,int mode)
     mat_t *mat = NULL;
 
     if ( (mode & 0x00000001) == MAT_ACC_RDONLY ) {
-        fp = fopen( matname, "rb" );
+        fp = matio_open( matname, "rb" );
         if ( !fp )
             return NULL;
     } else if ( (mode & 0x00000001) == MAT_ACC_RDWR ) {
-        fp = fopen( matname, "r+b" );
+        fp = matio_open( matname, "r+b" );
         if ( !fp ) {
             mat = Mat_CreateVer(matname,NULL,mode&0xfffffffe);
             return mat;
@@ -165,7 +167,7 @@ Mat_Open(const char *matname,int mode)
     mat = malloc(sizeof(*mat));
     if ( NULL == mat ) {
         Mat_Critical("Couldn't allocate memory for the MAT file");
-        fclose(fp);
+        matio_close(fp);
         return NULL;
     }
 
@@ -184,11 +186,11 @@ Mat_Open(const char *matname,int mode)
         mat->subsys_offset = malloc(8);
         mat->filename      = NULL;
 
-        err = fread(mat->header,1,116,fp);
+        err = matio_read(mat->header,1,116,fp);
         mat->header[116] = '\0';
-        err = fread(mat->subsys_offset,1,8,fp);
-        err = fread(&tmp2,2,1,fp);
-        fread (&tmp,1,2,fp);
+        err = matio_read(mat->subsys_offset,1,8,fp);
+        err = matio_read(&tmp2,2,1,fp);
+        matio_read (&tmp,1,2,fp);
         mat->bof = ftell(mat->fp);
         mat->next_index    = 0;
 
@@ -216,7 +218,7 @@ Mat_Open(const char *matname,int mode)
     }
 
     if ( mat->version == 0x0200 ) {
-        fclose(mat->fp);
+        matio_close(mat->fp);
 #if defined(MAT73) && MAT73
 
         mat->fp = malloc(sizeof(hid_t));
@@ -260,7 +262,7 @@ Mat_Close( mat_t *mat )
         }
 #endif
         if ( mat->fp )
-            fclose(mat->fp);
+            matio_close(mat->fp);
         if ( mat->header )
             free(mat->header);
         if ( mat->subsys_offset )
@@ -287,10 +289,10 @@ Mat_Rewind( mat_t *mat )
             mat->next_index = 0;
             break;
         case MAT_FT_MAT5:
-            fseek(mat->fp,128L,SEEK_SET);
+            matio_seek(mat->fp,128L,SEEK_SET);
             break;
         case MAT_FT_MAT4:
-            fseek(mat->fp,0L,SEEK_SET);
+            matio_seek(mat->fp,0L,SEEK_SET);
             break;
         default:
             return -1;
@@ -657,7 +659,7 @@ Mat_VarDelete(mat_t *mat, const char *name)
         }
         /* FIXME: Memory leak */
         new_name = strdup_printf("%s",mat->filename);
-        fclose(mat->fp);
+        matio_close(mat->fp);
 		
         if ( (err = remove(new_name)) == -1 ) {
             Mat_Critical("remove of %s failed",new_name);
@@ -853,6 +855,8 @@ Mat_VarFree(matvar_t *matvar)
                         free(matvar->data);
                     }
                 }
+                break;
+            default:
                 break;
         }
     }
@@ -1266,13 +1270,14 @@ Mat_VarGetNumberOfFields(matvar_t *matvar)
  * @ingroup MAT
  * @param matvar Pointer to the Structure MAT variable
  * @param field_index 0-relative index of the field.
- * @param index linear index of the structure array
+ * @param ind linear index of the structure array
  * @return Pointer to the structure field on success, NULL on error
  */
 matvar_t *
-Mat_VarGetStructFieldByIndex(matvar_t *matvar,size_t field_index,size_t index)
+Mat_VarGetStructFieldByIndex(matvar_t *matvar,size_t field_index,size_t ind)
 {
-    int       i, err = 0, nfields, nmemb;
+    int       i;
+    size_t    nmemb, nfields;
     matvar_t *field = NULL;
 
     if ( matvar == NULL || matvar->class_type != MAT_C_STRUCT   ||
@@ -1288,13 +1293,13 @@ Mat_VarGetStructFieldByIndex(matvar_t *matvar,size_t field_index,size_t index)
     else
         nfields = matvar->nbytes / (matvar->data_size);
 
-    if ( nmemb > 0 && index >= nmemb ) {
+    if ( nmemb > 0 && ind >= nmemb ) {
         Mat_Critical("Mat_VarGetStructField: structure index out of bounds");
     } else if ( nfields > 0 ) {
         if ( field_index > nfields ) {
             Mat_Critical("Mat_VarGetStructField: field index out of bounds");
         } else {
-            field = *((matvar_t **)matvar->data+index*nfields+field_index);
+            field = *((matvar_t **)matvar->data+ind*nfields+field_index);
         }
     }
 
@@ -1307,14 +1312,15 @@ Mat_VarGetStructFieldByIndex(matvar_t *matvar,size_t field_index,size_t index)
  * @ingroup MAT
  * @param matvar Pointer to the Structure MAT variable
  * @param name Name of the structure field
- * @param index linear index of the structure array
+ * @param ind linear index of the structure array
  * @return Pointer to the structure field on success, NULL on error
  */
 matvar_t *
 Mat_VarGetStructFieldByName(matvar_t *matvar,const char *field_name,
-    size_t index)
+    size_t ind)
 {
-    int       i, err = 0, nfields, nmemb;
+    int       i, nfields;
+    size_t    nmemb;
     matvar_t *field = NULL;
 
     if ( matvar == NULL || matvar->class_type != MAT_C_STRUCT   ||
@@ -1330,10 +1336,10 @@ Mat_VarGetStructFieldByName(matvar_t *matvar,const char *field_name,
     else
         nfields = matvar->nbytes / (matvar->data_size);
 
-    if ( index < 0 || (nmemb > 0 && index >= nmemb ) ) {
+    if (nmemb > 0 && ind >= nmemb) {
         Mat_Critical("Mat_VarGetStructField: structure index out of bounds");
     } else if ( nfields > 0 ) {
-        matvar_t **fields = (matvar_t **)matvar->data+index*nfields;
+        matvar_t **fields = (matvar_t **)matvar->data+ind*nfields;
         for ( i = 0; i < nfields; i++ ) {
             field = fields[i];
             if ( NULL != field && NULL != field->name &&
@@ -1375,7 +1381,7 @@ Mat_VarGetStructField(matvar_t *matvar,const void *name_or_index,int opt,int ind
     else
         nfields = matvar->nbytes / (matvar->data_size);
 
-    if ( index < 0 || (nmemb > 0 && index >= nmemb ))
+    if ( ind < 0 || (nmemb > 0 && ind >= nmemb ))
         err = 1;
     else if ( nfields < 1 )
         err = 1;
@@ -1383,9 +1389,9 @@ Mat_VarGetStructField(matvar_t *matvar,const void *name_or_index,int opt,int ind
     if ( !err && (opt == MAT_BY_INDEX) ) {
         size_t field_index = *(int *)name_or_index;
         if ( field_index > 0 )
-            field = Mat_VarGetStructFieldByIndex(matvar,field_index-1,index);
+            field = Mat_VarGetStructFieldByIndex(matvar,field_index-1,ind);
     } else if ( !err && (opt == MAT_BY_NAME) ) {
-        field = Mat_VarGetStructFieldByName(matvar,name_or_index,index);
+        field = Mat_VarGetStructFieldByName(matvar,name_or_index,ind);
     }
 
     return field;
@@ -1585,9 +1591,9 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
     printf("      Rank: %d\n", matvar->rank);
     if ( matvar->rank == 0 )
         return;
-    printf("Dimensions: %d",matvar->dims[0]);
+    printf("Dimensions: %zu",matvar->dims[0]);
     for ( i = 1; i < matvar->rank; i++ )
-        printf(" x %d",matvar->dims[i]);
+        printf(" x %zu",matvar->dims[i]);
     printf("\n");
     printf("Class Type: %s",class_type_desc[matvar->class_type]);
     if ( matvar->isComplex )
@@ -1641,52 +1647,53 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
             case MAT_C_INT8:
             case MAT_C_UINT8:
             {
+                size_t i2,j2;
                 size_t stride = Mat_SizeOf(matvar->data_type);
                 if ( matvar->isComplex ) {
                     struct ComplexSplit *complex_data = matvar->data;
                     char *rp = complex_data->Re;
                     char *ip = complex_data->Im;
-                   for ( i = 0; i < matvar->dims[0] && i < 15; i++ ) {
-                        for ( j = 0; j < matvar->dims[1] && j < 15; j++ ) {
-                            size_t idx = matvar->dims[0]*j+i;
+                    for ( i2 = 0; i2 < matvar->dims[0] && i2 < 15; i2++ ) {
+                        for ( j2 = 0; j2 < matvar->dims[1] && j2 < 15; j2++ ) {
+                            size_t idx = matvar->dims[0]*j2+i2;
                             Mat_PrintNumber(matvar->data_type,rp+idx*stride);
                             printf(" + ");
                             Mat_PrintNumber(matvar->data_type,ip+idx*stride);
                             printf("i ");
                         }
-                        if ( j < matvar->dims[1] )
+                        if ( j2 < matvar->dims[1] )
                             printf("...");
                         printf("\n");
                     }
-                    if ( i < matvar->dims[0] )
+                    if ( i2 < matvar->dims[0] )
                         printf(".\n.\n.\n");
                } else {
                    char *data = matvar->data;
-                   for ( i = 0; i < matvar->dims[0] && i < 15; i++ ) {
-                        for ( j = 0; j < matvar->dims[1] && j < 15; j++ ) {
-                            size_t idx = matvar->dims[0]*j+i;
+                   for ( i2 = 0; i2 < matvar->dims[0] && i2 < 15; i2++ ) {
+                        for ( j2 = 0; j2 < matvar->dims[1] && j2 < 15; j2++ ) {
+                            size_t idx = matvar->dims[0]*j2+i2;
                             Mat_PrintNumber(matvar->data_type,
                                             data+idx*stride);
                             printf(" ");
                         }
-                        if ( j < matvar->dims[1] )
+                        if ( j2 < matvar->dims[1] )
                             printf("...");
                         printf("\n");
                     }
-                    if ( i < matvar->dims[0] )
+                    if ( i2 < matvar->dims[0] )
                         printf(".\n.\n.\n");
                 }
                 break;
             }
             case MAT_C_CHAR:
             {
+                size_t i2,j2;
                 char *data = matvar->data;
                 if ( !printdata )
                     break;
-                for ( i = 0; i < matvar->dims[0]; i++ ) {
-                    j = 0;
-                    for ( j = 0; j < matvar->dims[1]; j++ )
-                        printf("%c",data[j*matvar->dims[0]+i]);
+                for ( i2 = 0; i2 < matvar->dims[0]; i2++ ) {
+                    for ( j2 = 0; j2 < matvar->dims[1]; j2++ )
+                        printf("%c",data[j2*matvar->dims[0]+i2]);
                     printf("\n");
                 }
                 break;
@@ -1708,7 +1715,7 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
                     for ( i = 0; i < sparse->njc-1; i++ ) {
                         for (j = sparse->jc[i];
                              j<sparse->jc[i+1] && j<sparse->ndata;j++ ) {
-                            printf("    (%d,%d)  ",sparse->ir[j]+1,i+1);
+                            printf("    (%u,%u)  ",sparse->ir[j]+1,i+1);
                             Mat_PrintNumber(matvar->data_type,re+j*stride);
                             printf(" + ");
                             Mat_PrintNumber(matvar->data_type,im+j*stride);
@@ -1721,7 +1728,7 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
                     for ( i = 0; i < sparse->njc-1; i++ ) {
                         for (j = sparse->jc[i];
                              j<sparse->jc[i+1] && j<sparse->ndata;j++ ){
-                            printf("    (%d,%d)  ",sparse->ir[j]+1,i+1);
+                            printf("    (%u,%u)  ",sparse->ir[j]+1,i+1);
                             Mat_PrintNumber(matvar->data_type,data+j*stride);
                             printf("\n");
                         }
@@ -1729,6 +1736,8 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
                 }
                 break;
             } /* case MAT_C_SPARSE: */
+            default:
+                break;
         } /* switch( matvar->class_type ) */
     }
 
@@ -1809,16 +1818,16 @@ Mat_VarReadDataLinear(mat_t *mat,matvar_t *matvar,void *data,int start,
 
     if ( mat->version == MAT_FT_MAT4 )
         return -1;
-    fseek(mat->fp,matvar->internal->datapos,SEEK_SET);
+    matio_seek(mat->fp,matvar->internal->datapos,SEEK_SET);
     if ( matvar->compression == COMPRESSION_NONE ) {
-        fread(tag,4,2,mat->fp);
+        matio_read(tag,4,2,mat->fp);
         if ( mat->byteswap ) {
             Mat_int32Swap(tag);
             Mat_int32Swap(tag+1);
         }
         matvar->data_type = tag[0] & 0x000000ff;
         if ( tag[0] & 0xffff0000 ) { /* Data is packed in the tag */
-            fseek(mat->fp,-4,SEEK_CUR);
+            matio_seek(mat->fp,-4,SEEK_CUR);
             real_bytes = 4+(tag[0] >> 16);
         } else {
             real_bytes = 8+tag[1];
@@ -1859,15 +1868,15 @@ Mat_VarReadDataLinear(mat_t *mat,matvar_t *matvar,void *data,int start,
 
             ReadDataSlab1(mat,complex_data->Re,matvar->class_type,
                 matvar->data_type,start,stride,edge);
-            fseek(mat->fp,matvar->internal->datapos+real_bytes,SEEK_SET);
-            fread(tag,4,2,mat->fp);
+            matio_seek(mat->fp,matvar->internal->datapos+real_bytes,SEEK_SET);
+            matio_read(tag,4,2,mat->fp);
             if ( mat->byteswap ) {
                 Mat_int32Swap(tag);
                 Mat_int32Swap(tag+1);
             }
             matvar->data_type = tag[0] & 0x000000ff;
             if ( tag[0] & 0xffff0000 ) { /* Data is packed in the tag */
-                fseek(mat->fp,-4,SEEK_CUR);
+                matio_seek(mat->fp,-4,SEEK_CUR);
             }
             ReadDataSlab1(mat,complex_data->Im,matvar->class_type,
                           matvar->data_type,start,stride,edge);
@@ -1883,7 +1892,7 @@ Mat_VarReadDataLinear(mat_t *mat,matvar_t *matvar,void *data,int start,
             ReadCompressedDataSlab1(mat,&z,complex_data->Re,
                 matvar->class_type,matvar->data_type,start,stride,edge);
             
-            fseek(mat->fp,matvar->internal->datapos,SEEK_SET);
+            matio_seek(mat->fp,matvar->internal->datapos,SEEK_SET);
             
             /* Reset zlib knowledge to before reading real tag */
             inflateEnd(&z);
@@ -1953,6 +1962,8 @@ Mat_VarReadDataLinear(mat_t *mat,matvar_t *matvar,void *data,int start,
         case MAT_C_UINT8:
             matvar->data_type = MAT_T_UINT8;
             matvar->data_size = sizeof(mat_uint8_t);
+            break;
+        default:
             break;
     }
 
@@ -2025,7 +2036,7 @@ Mat_VarReadInfo( mat_t *mat, const char *name )
         } while ( NULL == matvar && mat->next_index < mat->num_datasets);
     } else {
         fpos = ftell(mat->fp);
-        fseek(mat->fp,mat->bof,SEEK_SET);
+        matio_seek(mat->fp,mat->bof,SEEK_SET);
         do {
             matvar = Mat_VarReadNextInfo(mat);
             if ( matvar != NULL ) {
@@ -2042,7 +2053,7 @@ Mat_VarReadInfo( mat_t *mat, const char *name )
             }
         } while ( !matvar && !feof(mat->fp) );
 
-        fseek(mat->fp,fpos,SEEK_SET);
+        matio_seek(mat->fp,fpos,SEEK_SET);
     }
     return matvar;
 }
@@ -2073,7 +2084,7 @@ Mat_VarRead( mat_t *mat, const char *name )
         ReadData(mat,matvar);
 
     if ( MAT_FT_MAT73 != mat->version )
-        fseek(mat->fp,fpos,SEEK_SET);
+        matio_seek(mat->fp,fpos,SEEK_SET);
     return matvar;
 }
 
@@ -2101,7 +2112,7 @@ Mat_VarReadNext( mat_t *mat )
     if ( matvar )
         ReadData(mat,matvar);
     else if (mat->version != MAT_FT_MAT73 )
-        fseek(mat->fp,fpos,SEEK_SET);
+        matio_seek(mat->fp,fpos,SEEK_SET);
     return matvar;
 }
 
@@ -2148,7 +2159,7 @@ Mat_VarWriteData(mat_t *mat,matvar_t *matvar,void *data,
 {
     int err = 0, k, N = 1;
 
-    fseek(mat->fp,matvar->internal->datapos+8,SEEK_SET);
+    matio_seek(mat->fp,matvar->internal->datapos+8,SEEK_SET);
 
     if ( mat == NULL || matvar == NULL || data == NULL ) {
         err = -1;
@@ -2166,9 +2177,9 @@ Mat_VarWriteData(mat_t *mat,matvar_t *matvar,void *data,
         }
 #endif
     } else if ( matvar->rank == 2 ) {
-        if ( stride[0]*(edge[0]-1)+start[0]+1 > matvar->dims[0] ) {
+        if ( (size_t) (stride[0]*(edge[0]-1)+start[0]+1) > matvar->dims[0] ) {
             err = 1;
-        } else if ( stride[1]*(edge[1]-1)+start[1]+1 > matvar->dims[1] ) {
+        } else if ( (size_t) (stride[1]*(edge[1]-1)+start[1]+1) > matvar->dims[1] ) {
             err = 1;
         } else {
             switch ( matvar->class_type ) {
@@ -2188,6 +2199,8 @@ Mat_VarWriteData(mat_t *mat,matvar_t *matvar,void *data,
                 case MAT_C_CHAR:
                     WriteCharDataSlab2(mat,data,matvar->data_type,matvar->dims,
                                    start,stride,edge);
+                    break;
+                default:
                     break;
             }
         }

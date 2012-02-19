@@ -18,8 +18,11 @@
 #ifndef MATIO_PRIVATE_H
 #define MATIO_PRIVATE_H
 
+#define MATIO_INTERNAL
+
 #include "matioConfig.h"
 #include "matio.h"
+#include "matio_io.h"
 #if defined(HAVE_ZLIB)
 #   include <zlib.h>
 #endif

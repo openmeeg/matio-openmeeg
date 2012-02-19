@@ -59,11 +59,16 @@ ENDIF()
 # = Check headers =
 # =================
 
-# Provide stdint.h for windows.
+#   For public header
+
+# Provide stdint.h for windows, if it is not already there.
+# MSVC starts to include stddint.h only from MSVC10 !!!
+# Append after in order to use the system includes if they are provided.
 
 IF (WIN32 AND NOT CYGWIN_INSTALL_PATH)
-    SET(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/contrib/Windows)
-    INCLUDE_DIRECTORIES(contrib/Windows)
+    SET(INTTYPES_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/contrib/msinttypes-r26)
+    SET(CMAKE_REQUIRED_INCLUDES ${INTTYPES_INCLUDES})
+    INCLUDE_DIRECTORIES(AFTER SYSTEM ${INTTYPES_INCLUDES})
 ENDIF()
 
 INCLUDE(CheckIncludeFile)
@@ -76,11 +81,6 @@ CHECK_INCLUDE_FILE(ctype.h    HAVE_CTYPE_H)
 CHECK_INCLUDE_FILE(string.h   HAVE_STRING_H)
 CHECK_INCLUDE_FILE(malloc.h   HAVE_MALLOC_H)
 CHECK_HEADER_STDC()
-
-#   For public header
-
-SET(MATIO_HAVE_INTTYPES_H ${HAVE_INTTYPES_H})
-SET(MATIO_HAVE_STDINT_H   ${HAVE_STDINT_H})
 
 # ===================
 # = Check type size =
@@ -116,13 +116,24 @@ CHECK_FUNCTION_EXISTS(vsnprintf HAVE_VSNPRINTF)
 CHECK_FUNCTION_EXISTS(snprintf  HAVE_SNPRINTF)
 CHECK_FUNCTION_EXISTS(vasprintf HAVE_VASPRINTF)
 CHECK_FUNCTION_EXISTS(asprintf  HAVE_ASPRINTF)
+CHECK_FUNCTION_EXISTS(getopt    HAVE_GETOPT)
 
 INCLUDE(VA_COPY)
 VA_COPY()
 
 IF (WIN32)
-    SET(LIBRARY_OUTPUT_PATH    "${CMAKE_BINARY_DIR}")
-    SET(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
+    IF (NOT LIBRARY_OUTPUT_PATH)
+        SET(LIBRARY_OUTPUT_PATH    "${CMAKE_CURRENT_BINARY_DIR}")
+    ENDIF()
+    IF (NOT EXECUTABLE_OUTPUT_PATH)
+        SET(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}")
+    ENDIF()
+ENDIF()
+
+IF (NOT HAVE_GETOPT)
+    ADD_SUBDIRECTORY(getopt/lib)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/getopt/lib)
+    SET(GETOPT_LIB gnu)
 ENDIF()
 
 # =========
@@ -137,7 +148,7 @@ IF (USE_SYSTEM_ZLIB_STATUS_NOT_EMPTY)
     STRING(COMPARE NOTEQUAL "${USE_SYSTEM_ZLIB_STATUS}" "${USE_SYSTEM_ZLIB}" RESET)
 ENDIF()
 
-# Store in cache previous value of BUILD_SHARED
+# Store in cache previous value of BUILD_SHARED_LIBS
 SET(USE_SYSTEM_ZLIB_STATUS "${USE_SYSTEM_ZLIB}" CACHE INTERNAL "Previous system zlib status" FORCE)
 
 IF (${RESET})
@@ -148,7 +159,7 @@ IF (${RESET})
 ENDIF()
 
 IF (USE_SYSTEM_ZLIB)
-    FIND_LIBRARY(SYSTEM_ZLIB z)
+    MATIO_FIND_LIBRARY(SYSTEM_ZLIB z)
     IF (SYSTEM_ZLIB)
         SET(Z_LIBRARY ${SYSTEM_ZLIB} CACHE STRING "TEST")
     ELSE()
@@ -157,9 +168,10 @@ IF (USE_SYSTEM_ZLIB)
 ENDIF()
 
 IF (NOT USE_SYSTEM_ZLIB OR USE_LOCAL_ZLIB)
-    ADD_SUBDIRECTORY(zlib)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zlib ${CMAKE_CURRENT_BINARY_DIR}/zlib)
-    IF (NOT BUILD_SHARED)
+    SET(ZLIBDIR contrib/zlib-1.2.5)
+    ADD_SUBDIRECTORY(${ZLIBDIR})
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/${ZLIBDIR} ${CMAKE_CURRENT_BINARY_DIR}/${ZLIBDIR})
+    IF (NOT BUILD_SHARED_LIBS)
         SET(TARGET_SUFFIX -static)
     ENDIF()
     SET(Z_LIBRARY zlib)
@@ -175,7 +187,7 @@ IF (MAT73_STATUS_NOT_EMPTY)
     STRING(COMPARE NOTEQUAL "${MAT73_STATUS}" "${MAT73}" RESET)
 ENDIF()
 
-# Store in cache previous value of BUILD_SHARED
+# Store in cache previous value of BUILD_SHARED_LIBS
 SET(MAT73_STATUS "${MAT73}" CACHE INTERNAL "Previous matlab 7.3 support status" FORCE)
 
 IF (${RESET})
@@ -184,10 +196,25 @@ IF (${RESET})
 ENDIF()
 
 IF (MAT73)
-    FIND_LIBRARY(HDF5_LIB hdf5)
+    MATIO_FIND_LIBRARY(HDF5_LIB hdf5)
     IF (NOT HDF5_LIB)
-        MESSAGE(FATAL_ERROR "HDF5 library not found")
+
+        # Tell hdf5 that we are manually overriding certain settings
+
+        SET(HDF5_EXTERNALLY_CONFIGURED 1)
+
+        # Avoid duplicating names of installed libraries
+
+        SET(HDF5_EXTERNAL_LIB_PREFIX "matio")
+
+        SET(HDF5LIBDIR contrib/hdf5-1.8.7)
+        ADD_SUBDIRECTORY(${HDF5LIBDIR})
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR}/src ${CMAKE_CURRENT_BINARY_DIR}/${HDF5LIBDIR})
     ENDIF()
+    IF (NOT BUILD_SHARED_LIBS)
+        SET(TARGET_SUFFIX -static)
+    ENDIF()
+    SET(HDF5_LIB hdf5)
 ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/src)
@@ -217,8 +244,8 @@ CONFIGURE_FILE(
 # = Testing =
 # ===========
 
-OPTION(BUILD_TESTING "Build tests" ON)
-IF (BUILD_TESTING)
+OPTION(MATIO_BUILD_TESTING "Build matio tests" ON)
+IF (MATIO_BUILD_TESTING)
     INCLUDE(CTest)
     ENABLE_TESTING()
     ADD_SUBDIRECTORY(test)
@@ -233,7 +260,7 @@ CONFIGURE_FILE(
     "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
     IMMEDIATE @ONLY)
 
-ADD_CUSTOM_TARGET(uninstall
+ADD_CUSTOM_TARGET(uninstall-${PROJECT-NAME}
     "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
 #-----------------------------------------------

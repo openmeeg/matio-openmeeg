@@ -600,7 +600,7 @@ help_test(const char *test)
 }
 
 static int
-test_write_2d_numeric(enum matio_classes matvar_class, char *output_name)
+test_write_2d_numeric(enum matio_classes matvar_class,const char *output_name)
 {
     size_t dims[2] = {5,10};
     int    err = 0, i;
@@ -619,7 +619,6 @@ test_write_2d_numeric(enum matio_classes matvar_class, char *output_name)
     mat_uint64_t ui64[50];
 #endif
     struct ComplexSplit z = {NULL,NULL},s = {NULL,NULL};
-    const char *str = "This is a string";
     mat_t *mat;
     matvar_t *matvar;
 
@@ -705,6 +704,8 @@ test_write_2d_numeric(enum matio_classes matvar_class, char *output_name)
             Mat_VarWrite(mat,matvar,compression);
             Mat_VarFree(matvar);
             break;
+        default:
+            break;
     }
 
     Mat_Close(mat);
@@ -713,7 +714,7 @@ test_write_2d_numeric(enum matio_classes matvar_class, char *output_name)
 }
 
 static int
-test_write_complex_2d_numeric(enum matio_classes matvar_class,char *output_name)
+test_write_complex_2d_numeric(enum matio_classes matvar_class,const char *output_name)
 {
     size_t dims[2] = {5,10};
     int    err = 0, i;
@@ -852,6 +853,8 @@ test_write_complex_2d_numeric(enum matio_classes matvar_class,char *output_name)
             Mat_VarWrite(mat,matvar,compression);
             Mat_VarFree(matvar);
             break;
+        default:
+            break;
     }
 
     Mat_Close(mat);
@@ -860,7 +863,7 @@ test_write_complex_2d_numeric(enum matio_classes matvar_class,char *output_name)
 }
 
 static int
-test_write_empty_2d_numeric(enum matio_classes matvar_class,char *output_name)
+test_write_empty_2d_numeric(enum matio_classes matvar_class,const char *output_name)
 {
     int       err = 0;
     mat_t    *mat;
@@ -899,6 +902,8 @@ test_write_empty_2d_numeric(enum matio_classes matvar_class,char *output_name)
         case MAT_C_UINT8:
             matvar_datatype = MAT_T_UINT8;
             break;
+        default:
+            break;
     }
 
     mat = Mat_CreateVer("test_write_empty_2d_numeric.mat",NULL,mat_file_ver);
@@ -916,11 +921,11 @@ test_write_empty_2d_numeric(enum matio_classes matvar_class,char *output_name)
 }
 
 static int
-test_write_char(char *output_name)
+test_write_char(const char *output_name)
 {
-    char     *str = "aA1[bB2{cC3]dD4}eE5\\fF6|gG7;hH8:iI9'jJ0\"kK!,lL@<"
+    const char *str = "aA1[bB2{cC3]dD4}eE5\\fF6|gG7;hH8:iI9'jJ0\"kK!,lL@<"
                     "mM#.nN$>oO%/pP^?qQ& rR* sS( tT) uU- vV_ wW= xX+ yY` zZ~ ";
-    int       err = 0, i;
+    int       err = 0;
     size_t    dims[2];
     mat_t    *mat;
     matvar_t *matvar;
@@ -930,7 +935,7 @@ test_write_char(char *output_name)
         dims[0]   = 4;
         dims[1]   = 26;
         matvar = Mat_VarCreate("a",MAT_C_CHAR,MAT_T_UINT8,2,
-                    dims,str,MAT_F_DONT_COPY_DATA);
+                    dims,(void*) str,MAT_F_DONT_COPY_DATA);
         Mat_VarWrite(mat,matvar,compression);
         Mat_Close(mat);
     }
@@ -984,12 +989,12 @@ test_readvar4(const char *inputfile, const char *var)
 }
 
 static int
-test_write_empty_struct(char *output_name)
+test_write_empty_struct(const char *output_name)
 {
     size_t  dims[2] = {0,0};
-    int    err = 0, i;
+    int    err = 0;
     mat_t     *mat;
-    matvar_t *matvar[5], *struct_matvar, *substruct_matvar;
+    matvar_t *matvar[5], *struct_matvar;
 
     mat = Mat_CreateVer(output_name,NULL,mat_file_ver);
     if ( mat ) {
@@ -1054,7 +1059,7 @@ test_write_empty_struct(char *output_name)
 
 static int
 test_write_struct_2d_numeric(enum matio_classes matvar_class,
-    char *output_name)
+    const char *output_name)
 {
     size_t dims[2] = {5,10};
     int    err = 0, i;
@@ -1168,6 +1173,8 @@ test_write_struct_2d_numeric(enum matio_classes matvar_class,
             data[2] = ui8+24;
             data[3] = ui8+36;
             data_type = MAT_T_UINT8;
+            break;
+        default:
             break;
     }
 
@@ -1201,7 +1208,7 @@ test_write_struct_2d_numeric(enum matio_classes matvar_class,
 
 static int
 test_write_struct_complex_2d_numeric(enum matio_classes matvar_class,
-    char *output_name)
+    const char *output_name)
 {
     size_t dims[2] = {5,10};
     int    err = 0, i;
@@ -1219,7 +1226,7 @@ test_write_struct_complex_2d_numeric(enum matio_classes matvar_class,
 #ifdef HAVE_MAT_UINT64_T
     mat_uint64_t ui64_real[50], ui64_imag[50];
 #endif
-    struct ComplexSplit data[4] = {NULL,NULL};
+    struct ComplexSplit data[4] = {{NULL,NULL},{NULL,NULL},{NULL,NULL},{NULL,NULL}};
     mat_t *mat;
     matvar_t *matvar[5], *struct_matvar;
     enum matio_types data_type;
@@ -1366,6 +1373,8 @@ test_write_struct_complex_2d_numeric(enum matio_classes matvar_class,
             data[3].Im = ui8_imag+36;
             data_type = MAT_T_UINT8;
             break;
+        default:
+            break;
     }
 
     mat = Mat_CreateVer(output_name,NULL,mat_file_ver);
@@ -1397,12 +1406,12 @@ test_write_struct_complex_2d_numeric(enum matio_classes matvar_class,
 }
 
 static int
-test_write_empty_cell(char *output_name)
+test_write_empty_cell(const char *output_name)
 {
     size_t  dims[2] = {0,0};
-    int    err = 0, i;
+    int    err = 0;
     mat_t     *mat;
-    matvar_t *matvar[5], *cell_matvar, *struct_matvar, *substruct_matvar;
+    matvar_t *matvar[5], *cell_matvar;
 
     mat = Mat_CreateVer(output_name,NULL,mat_file_ver);
     if ( mat ) {
@@ -1434,7 +1443,7 @@ test_write_empty_cell(char *output_name)
 
 static int
 test_write_cell_2d_numeric(enum matio_classes matvar_class,
-    char *output_name)
+    const char *output_name)
 {
     size_t dims[2] = {5,10};
     int    err = 0, i;
@@ -1549,6 +1558,8 @@ test_write_cell_2d_numeric(enum matio_classes matvar_class,
             data[3] = ui8+36;
             data_type = MAT_T_UINT8;
             break;
+        default:
+            break;
     }
 
     mat = Mat_CreateVer(output_name,NULL,mat_file_ver);
@@ -1581,7 +1592,7 @@ test_write_cell_2d_numeric(enum matio_classes matvar_class,
 
 static int
 test_write_cell_complex_2d_numeric(enum matio_classes matvar_class,
-    char *output_name)
+    const char *output_name)
 {
     size_t dims[2] = {5,10};
     int    err = 0, i;
@@ -1599,7 +1610,7 @@ test_write_cell_complex_2d_numeric(enum matio_classes matvar_class,
 #ifdef HAVE_MAT_UINT64_T
     mat_uint64_t ui64_real[50], ui64_imag[50];
 #endif
-    struct ComplexSplit data[4] = {NULL,NULL};
+    struct ComplexSplit data[4] = {{NULL,NULL},{NULL,NULL},{NULL,NULL},{NULL,NULL}};
     mat_t *mat;
     matvar_t *matvar[5], *cell_matvar;
     enum matio_types data_type;
@@ -1745,6 +1756,8 @@ test_write_cell_complex_2d_numeric(enum matio_classes matvar_class,
             data[3].Re = ui8_real+36;
             data[3].Im = ui8_imag+36;
             data_type = MAT_T_UINT8;
+            break;
+        default:
             break;
     }
 
@@ -2040,7 +2053,7 @@ test_writeinf(void)
 }
 
 static int
-test_write_sparse(enum matio_classes matvar_class,char *output_name)
+test_write_sparse(enum matio_classes matvar_class,const char *output_name)
 {
     int    i;
     int    err = 0;
@@ -2136,6 +2149,8 @@ test_write_sparse(enum matio_classes matvar_class,char *output_name)
             sparse.data  = ui8;
             matvar_datatype = MAT_T_UINT8;
             break;
+        default:
+            break;
     }
 
     if ( NULL != sparse.data) {
@@ -2158,7 +2173,7 @@ test_write_sparse(enum matio_classes matvar_class,char *output_name)
 }
 
 static int
-test_write_complex_sparse(enum matio_classes matvar_class,char *output_name)
+test_write_complex_sparse(enum matio_classes matvar_class,const char *output_name)
 {
     int    i;
     int    err = 0;
@@ -2184,7 +2199,7 @@ test_write_complex_sparse(enum matio_classes matvar_class,char *output_name)
     mat_int32_t  jc[11] = {0,2,5,7,10,12,15,17,20,22,25};
     mat_t *mat;
     matvar_t *matvar;
-    sparse_t  sparse = {0,};
+    sparse_t  sparse = {0,NULL,0,NULL,0,0,NULL};
     struct ComplexSplit z = {NULL,NULL};
     enum matio_types matvar_datatype = MAT_T_UNKNOWN;
 
@@ -2221,6 +2236,8 @@ test_write_complex_sparse(enum matio_classes matvar_class,char *output_name)
             break;
         case MAT_C_DOUBLE:
             sparse.data  = &z;
+            break;
+        default:
             break;
     }
 
@@ -2285,6 +2302,8 @@ test_write_complex_sparse(enum matio_classes matvar_class,char *output_name)
             sparse.data  = &z;
             matvar_datatype = MAT_T_UINT8;
             break;
+        default:
+            break;
     }
 
     if ( NULL != sparse.data ) {
@@ -2329,9 +2348,9 @@ int main (int argc, char *argv[])
     const char *prog_name = "test_mat";
     int   c,i, k, err = 0, ntests = 0;
     mat_t *mat, *mat2;
-    matvar_t *matvar, *matvar2, *matvar3;
+    matvar_t *matvar;
     enum matio_classes matvar_class = MAT_C_DOUBLE;
-    char *output_name = NULL;
+    const char *output_name = NULL;
 
     Mat_LogInit(prog_name);
 
