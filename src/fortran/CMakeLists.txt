@@ -1,6 +1,3 @@
-INCLUDE(FortranCInterface)
-FortranCInterface_HEADER(fortran.h MACRO_NAMESPACE "FC_" FROM_LIBRARY blas[daxpy])
-
 CONFIGURE_FILE(matio_t.inc.in matio_t.inc IMMEDIATE @ONLY)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
