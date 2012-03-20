@@ -10,6 +10,8 @@ IF (WIN32)
 ENDIF()
 
 IF (ENABLE_FORTRAN)
+    INCLUDE(FortranCInterface)
+    FortranCInterface_HEADER(fortran.h MACRO_NAMESPACE "FC_" FROM_LIBRARY blas[daxpy])
     ADD_SUBDIRECTORY(fortran)
 ENDIF()
 
@@ -41,7 +43,7 @@ CONFIGURE_FILE(
 # = INSTALLATION =
 # ================
 
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h  ${CMAKE_CURRENT_BINARY_DIR}/fortran.h
         DESTINATION include)
 
 INSTALL(TARGETS matio
