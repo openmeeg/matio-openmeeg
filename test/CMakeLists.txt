@@ -159,6 +159,6 @@ SET(MATIO_READ_TESTS readvar4 readslab4 slab3)
 IF (ENABLE_FORTRAN)
     INCLUDE_DIRECTORIES(${MATIO_SOURCE_DIR}/src/fortran ${MATIO_BINARY_DIR}/src/fortran)
     ADD_EXECUTABLE(test_matf test_matf.f90)
-    TARGET_LINK_LIBRARIES(test_matf fmatio m)
+    TARGET_LINK_LIBRARIES(test_matf fmatio matio m)
     # TESTS
 ENDIF()
