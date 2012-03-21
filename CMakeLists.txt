@@ -169,12 +169,16 @@ ENDIF()
 
 IF (NOT USE_SYSTEM_ZLIB OR USE_LOCAL_ZLIB)
     SET(ZLIBDIR contrib/zlib-1.2.5)
-    ADD_SUBDIRECTORY(${ZLIBDIR})
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/${ZLIBDIR} ${CMAKE_CURRENT_BINARY_DIR}/${ZLIBDIR})
-    IF (NOT BUILD_SHARED_LIBS)
-        SET(TARGET_SUFFIX -static)
+    IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ZLIBDIR})
+        ADD_SUBDIRECTORY(${ZLIBDIR})
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/${ZLIBDIR} ${CMAKE_CURRENT_BINARY_DIR}/${ZLIBDIR})
+        IF (NOT BUILD_SHARED_LIBS)
+            SET(TARGET_SUFFIX -static)
+        ENDIF()
+        SET(Z_LIBRARY zlib)
+    ELSE()
+        MESSAGE(FATAL_ERROR "zlib is required by matio")
     ENDIF()
-    SET(Z_LIBRARY zlib)
 ENDIF()
 
 SET(HAVE_ZLIB 1)
@@ -197,25 +201,34 @@ ENDIF()
 
 IF (MAT73)
     MATIO_FIND_LIBRARY(HDF5_LIB hdf5)
-    IF (NOT HDF5_LIB)
-
-        # Tell hdf5 that we are manually overriding certain settings
-
-        SET(HDF5_EXTERNALLY_CONFIGURED 1)
-
-        # Avoid duplicating names of installed libraries
-
-        SET(HDF5_EXTERNAL_LIB_PREFIX "matio")
-
+    IF (HDF5_LIB)
+        SET(HAVE_HDF5 1)
+    ELSE()
         SET(HDF5LIBDIR contrib/hdf5-1.8.7)
-        ADD_SUBDIRECTORY(${HDF5LIBDIR})
-        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR}/src ${CMAKE_CURRENT_BINARY_DIR}/${HDF5LIBDIR})
+        IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR})
+
+            # Tell hdf5 that we are manually overriding certain settings
+
+            SET(HDF5_EXTERNALLY_CONFIGURED 1)
+
+            # Avoid duplicating names of installed libraries
+
+            SET(HDF5_EXTERNAL_LIB_PREFIX "matio")
+
+            ADD_SUBDIRECTORY(${HDF5LIBDIR})
+            INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR}/src ${CMAKE_CURRENT_BINARY_DIR}/${HDF5LIBDIR})
+            SET(HAVE_HDF5 1)
+        ELSE()
+            MESSAGE(WARNING "hdf5 not found, mat7.3 format disabled")
+            SET(MAT73 OFF CACHE BOOL "Matlab 7.3 support disabled because hdf5 was not found" FORCE)
+        ENDIF()
     ENDIF()
-    IF (NOT BUILD_SHARED_LIBS)
-        SET(TARGET_SUFFIX -static)
+    IF (MAT73 AND HAVE_HDF5)
+        IF (NOT BUILD_SHARED_LIBS)
+            SET(TARGET_SUFFIX -static)
+        ENDIF()
+        SET(HDF5_LIB hdf5)
     ENDIF()
-    SET(HDF5_LIB hdf5)
-    SET(HAVE_HDF5 1)
 ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/src)
