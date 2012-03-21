@@ -11,7 +11,7 @@ ENDIF()
 
 IF (ENABLE_FORTRAN)
     INCLUDE(FortranCInterface)
-    FortranCInterface_HEADER(fortran.h MACRO_NAMESPACE "FC_" FROM_LIBRARY blas[daxpy])
+    FortranCInterface_HEADER(fortran.h MACRO_NAMESPACE "FC_")
     ADD_SUBDIRECTORY(fortran)
 ENDIF()
 
