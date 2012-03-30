@@ -609,6 +609,14 @@ help_test(const char *test)
         exit(EXIT_FAILURE);
 }
 
+static void
+redirect_output(const char* output)
+{
+    if (output!=NULL)
+        if (freopen(output,"w",stdout)==NULL)
+            fprintf(stderr, "Unable to open %s for writing. Using stdout instead.");
+}
+
 static int
 test_write_2d_numeric(enum matio_classes matvar_class, char *output_name)
 {
@@ -948,11 +956,13 @@ test_write_char(char *output_name)
 }
 
 static int
-test_readvar(const char *inputfile, const char *var)
+test_readvar(const char *inputfile, const char *var, const char* output)
 {
     int err = 0;
     mat_t *mat;
     matvar_t *matvar;
+
+    redirect_output(output);
 
     mat = Mat_Open(inputfile,MAT_ACC_RDONLY);
     if ( mat ) {
@@ -967,6 +977,7 @@ test_readvar(const char *inputfile, const char *var)
     } else {
         err = 1;
     }
+
     return err;
 }
 
@@ -2734,7 +2745,7 @@ int main (int argc, char *argv[])
                 Mat_Critical("Must specify the input file and variable respectively");
                 err++;
             } else {
-                err += test_readvar(argv[k],argv[k+1]);
+                err += test_readvar(argv[k],argv[k+1],output_name);
                 k+=2;
             }
             ntests++;
@@ -2919,6 +2930,7 @@ int main (int argc, char *argv[])
         } else if ( !strcasecmp(argv[k],"ind2sub") ) {
             int *subs, dims[3] = {256,256,124};
 
+            redirect_output(output_name);
             subs = Mat_CalcSubscripts(3,dims,18921-1);
             Mat_Message("%d,%d,%d",subs[0],subs[1],subs[2]);
             free(subs);
@@ -2928,6 +2940,7 @@ int main (int argc, char *argv[])
             int  dims[3] = {256,256,124}, index[3] = {233,74,1};
             int  linear_index;
 
+            redirect_output(output_name);
             linear_index = Mat_CalcSingleSubscript(3,dims,index);
             Mat_Message("%d",linear_index);
             k++;
