@@ -39,6 +39,7 @@ TESTSUITE_AT = $(srcdir)/testsuite.at \
                $(srcdir)/mat73_read_le.at \
                $(srcdir)/mat73_read_be.at \
                $(srcdir)/mat73_write.at \
+               $(srcdir)/mat73_compressed_write.at \
                $(srcdir)/struct_api.at \
                $(srcdir)/cell_api.at
 TESTSUITE = $(srcdir)/testsuite
@@ -91,16 +92,6 @@ test_mat_LDFLAGS = $(TEST_LFLAGS)
 test_snprintf_SOURCES = test_snprintf.c
 test_snprintf_LDADD   = $(TEST_LIBS)
 test_snprintf_LDFLAGS = $(TEST_LFLAGS)
-
-if ENABLE_FORTRAN
-noinst_PROGRAMS += test_matf
-
-test_matf_SOURCES = test_matf.f90
-test_matf_CFLAGS  = -I$(top_builddir)/src -I$(top_builddir)/src/fortran
-test_matf_FCFLAGS = -I$(top_builddir)/src -I$(top_builddir)/src/fortran
-test_matf_LDFLAGS = -L$(top_builddir)/src -L$(top_builddir)/src/fortran
-test_matf_LDADD   = $(TEST_LIBS)
-endif
 
 atconfig: $(top_builddir)/config.status
 	cd $(top_builddir) && ./config.status tests/$@
