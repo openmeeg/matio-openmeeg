@@ -878,13 +878,15 @@ test_write_complex_2d_numeric(enum matio_classes matvar_class,char *output_name)
 }
 
 static int
-test_write_empty_2d_numeric(enum matio_classes matvar_class,char *output_name)
+test_write_empty_2d_numeric(enum matio_classes matvar_class,char *name)
 {
     int       err = 0;
     mat_t    *mat;
     matvar_t *matvar;
     size_t    dims[2] = {0,10};
     enum matio_types matvar_datatype = MAT_T_UNKNOWN;
+
+    const char* filename = (name==NULL) ? "test_write_empty_2d_numeric.mat" : name;
 
     switch ( matvar_class ) {
         case MAT_C_DOUBLE:
@@ -919,7 +921,7 @@ test_write_empty_2d_numeric(enum matio_classes matvar_class,char *output_name)
             break;
     }
 
-    mat = Mat_CreateVer("test_write_empty_2d_numeric.mat",NULL,mat_file_ver);
+    mat = Mat_CreateVer(filename,NULL,mat_file_ver);
     if ( mat != NULL ) {
         matvar = Mat_VarCreate("empty",matvar_class,matvar_datatype,2,dims,
                      NULL,0);
@@ -1797,7 +1799,7 @@ test_write_cell_complex_2d_numeric(enum matio_classes matvar_class,
 }
 
 static int
-test_write_null(void)
+test_write_null(const char *name)
 {
     int       err = 0;
     mat_t    *mat;
@@ -1805,7 +1807,9 @@ test_write_null(void)
     matvar_t *struct_fields[5] = {NULL,NULL,NULL,NULL,NULL};
     size_t    dims[3] = {0,1,10};
 
-    mat = Mat_CreateVer("test_write_null.mat",NULL,mat_file_ver);
+    const char* filename = (name==NULL) ? "test_write_null.mat" : name;
+
+    mat = Mat_CreateVer(filename,NULL,mat_file_ver);
     if ( mat != NULL ) {
         struct_fields[0] = Mat_VarCreate("d_null",MAT_C_DOUBLE,MAT_T_DOUBLE,3,
                             dims,NULL,0);
@@ -1859,7 +1863,7 @@ test_write_null(void)
 }
 
 static int
-test_struct_api_create(void)
+test_struct_api_create(const char *name)
 {
     size_t dims[2] = {5,10};
     int    err = 0;
@@ -1867,6 +1871,8 @@ test_struct_api_create(void)
     matvar_t *matvar;
     size_t num_fields = 2;
     const char *fieldnames[2] = {"field1","field2"};
+
+    redirect_output(name);
 
     dims[0] = 2;
     dims[1] = 1;
@@ -1887,7 +1893,7 @@ test_struct_api_create(void)
 }
 
 static int
-test_struct_api_setfield(void)
+test_struct_api_setfield(const char *name)
 {
     size_t dims[2];
     int    err = 0;
@@ -1896,6 +1902,8 @@ test_struct_api_setfield(void)
     matvar_t *fields[5], *matvar;
     const size_t num_fields = 2;
     const char *fieldnames[2] = {"field1","field2"};
+
+    redirect_output(name);
 
     dims[0] = 2; dims[1] = 1;
     fields[0] = Mat_VarCreate(NULL,MAT_C_DOUBLE,MAT_T_DOUBLE,2,
@@ -1933,7 +1941,7 @@ test_struct_api_setfield(void)
 }
 
 static int
-test_struct_api_getfieldnames(void)
+test_struct_api_getfieldnames(const char *name)
 {
     size_t dims[2];
     int    err = 0;
@@ -1942,6 +1950,8 @@ test_struct_api_getfieldnames(void)
     const char *fieldnames[4] = {"field1","field2","field3","field4"};
     unsigned nfields, i;
     char * const *fieldnames2;
+
+    redirect_output(name);
 
     dims[0] = 2; dims[1] = 1;
     matvar      = Mat_VarCreateStruct("a", 2, dims, fieldnames, num_fields);
@@ -1982,12 +1992,14 @@ test_struct_api_getfieldnames(void)
 }
 
 static int
-test_struct_api_addfield(void)
+test_struct_api_addfield(const char *name)
 {
     size_t    dims[2];
     double    data1[2] = {0,1}, data2[3] = {2,3,4}, data3[3] = {5,6,7},
               data4[2] = {8,9};
     matvar_t *fields[5], *matvar;
+
+    redirect_output(name);
 
     dims[0] = 2; dims[1] = 1;
     matvar = Mat_VarCreateStruct("a", 2, dims, NULL, 0);
@@ -2018,7 +2030,7 @@ test_struct_api_addfield(void)
 }
 
 static int
-test_struct_api_getlinear(void)
+test_struct_api_getlinear(const char *name)
 {
     size_t dims[2];
     int    err = 0, i;
@@ -2028,6 +2040,8 @@ test_struct_api_getlinear(void)
     matvar_t *field, *matvar, *matvar2;
     const size_t num_fields = 3;
     const char *fieldnames[3] = {"r","c","z"};
+
+    redirect_output(name);
 
     dims[0] = 3;
     dims[1] = 4;
@@ -2070,7 +2084,7 @@ test_struct_api_getlinear(void)
 }
 
 static int
-test_struct_api_get(void)
+test_struct_api_get(const char *name)
 {
     size_t dims[4];
     int    err = 0, i, start[4], stride[4], edge[4];
@@ -2078,6 +2092,8 @@ test_struct_api_get(void)
     matvar_t *field, *matvar, *matvar2;
     const size_t num_fields = 2;
     const char *fieldnames[3] = {"r","c"};
+
+    redirect_output(name);
 
     dims[0] = 3;
     dims[1] = 4;
@@ -2112,11 +2128,13 @@ test_struct_api_get(void)
 }
 
 static int
-test_cell_api_set(void)
+test_cell_api_set(const char *name)
 {
     size_t dims[2];
     double    data[10] = {0,1,2,3,4,5,6,7,8,9};
     matvar_t *cells[10], *matvar, *prev_cell;
+
+    redirect_output(name);
 
     dims[0] = 2; dims[1] = 3;
     matvar = Mat_VarCreate("a", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
@@ -2178,12 +2196,14 @@ test_cell_api_set(void)
 }
 
 static int
-test_cell_api_getlinear(void)
+test_cell_api_getlinear(const char *name)
 {
     size_t dims[2], i;
     double    r[4] = {0,1,2,3},c[4] = {4,5,6,7};
     mat_complex_split_t z[4];
     matvar_t *cell, *matvar, **cells;
+
+    redirect_output(name);
 
     dims[0] = 3; dims[1] = 4;
     matvar = Mat_VarCreate("a", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
@@ -2236,12 +2256,14 @@ test_cell_api_getlinear(void)
 }
 
 static int
-test_cell_api_getcells(void)
+test_cell_api_getcells(const char *name)
 {
     size_t dims[4];
     int    i, start[4], stride[4], edge[4];
     double    x[360] = {0,};
     matvar_t *cell, *matvar, **matvar2;
+
+    redirect_output(name);
 
     dims[0] = 3;
     dims[1] = 4;
@@ -2376,7 +2398,7 @@ test_readslab4(const char *file, const char *var)
 }
 
 static int
-test_writeslab(void)
+test_writeslab(const char *name)
 {
     int        err = 0, i;
     size_t     dims[2] = {6,10};
@@ -2387,13 +2409,15 @@ test_writeslab(void)
     mat_t    *mat;
     matvar_t *matvar, *matvar2, *matvar3;
 
+    const char* filename = (name==NULL) ? "test_mat_writeslab.mat" : name;
+
     for ( i = 0; i < 60; i++ ) {
          data[i] = i+1;
         fdata[i] = i+1;
         idata[i] = i+1;
     }
 
-    mat = Mat_CreateVer("test_mat_writeslab.mat",NULL,mat_file_ver);
+    mat = Mat_CreateVer(filename,NULL,mat_file_ver);
     if ( mat != NULL ) {
         matvar = Mat_VarCreate("d",MAT_C_DOUBLE,MAT_T_DOUBLE,2,
                        dims,NULL,0);
@@ -2418,7 +2442,7 @@ test_writeslab(void)
 }
 
 static int
-test_writenan(void)
+test_writenan(const char *name)
 {
     int        err = 0, i;
     size_t     dims[2] = {5,5};
@@ -2427,13 +2451,15 @@ test_writenan(void)
     mat_t    *mat;
     matvar_t *matvar;
 
+    const char* filename = (name==NULL) ? "test_writenan.mat" : name;
+
     for ( i = 0; i < 25; i++ )
          data[i] = i+1;
 
     for ( i = 0; i < 25; i+= 6 )
         data[i] = 0.0/zero;
 
-    mat = Mat_CreateVer("test_writenan.mat",NULL,mat_file_ver);
+    mat = Mat_CreateVer(filename,NULL,mat_file_ver);
     if ( mat != NULL ) {
         matvar = Mat_VarCreate("d",MAT_C_DOUBLE,MAT_T_DOUBLE,2,
                        dims,data,MAT_F_DONT_COPY_DATA);
@@ -2447,7 +2473,7 @@ test_writenan(void)
 }
 
 static int
-test_writeinf(void)
+test_writeinf(const char *name)
 {
     int        err = 0, i;
     size_t     dims[2] = {5,5};
@@ -2456,13 +2482,15 @@ test_writeinf(void)
     mat_t    *mat;
     matvar_t *matvar;
 
+    const char* filename = (name==NULL) ? "test_writeinf.mat" : name;
+
     for ( i = 0; i < 25; i++ )
          data[i] = i+1;
 
     for ( i = 0; i < 25; i+= 6 )
         data[i] = 1.0/zero;
 
-    mat = Mat_CreateVer("test_writeinf.mat",NULL,mat_file_ver);
+    mat = Mat_CreateVer(filename,NULL,mat_file_ver);
     if ( mat != NULL ) {
         matvar = Mat_VarCreate("d",MAT_C_DOUBLE,MAT_T_DOUBLE,2,
                        dims,data,MAT_F_DONT_COPY_DATA);
@@ -2729,15 +2757,15 @@ int main (int argc, char *argv[])
             ntests++;
         } else if ( !strcasecmp(argv[k],"writenull") ) {
             k++;
-            err += test_write_null();
+            err += test_write_null(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"writenan") ) {
             k++;
-            err += test_writenan();
+            err += test_writenan(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"writeinf") ) {
             k++;
-            err += test_writeinf();
+            err += test_writeinf(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"readvar") ) {
             k++;
@@ -2799,39 +2827,39 @@ int main (int argc, char *argv[])
             ntests++;
         } else if ( !strcasecmp(argv[k],"struct_api_create") ) {
             k++;
-            err += test_struct_api_create();
+            err += test_struct_api_create(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"struct_api_setfield") ) {
             k++;
-            err += test_struct_api_setfield();
+            err += test_struct_api_setfield(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"struct_api_getfieldnames") ) {
             k++;
-            err += test_struct_api_getfieldnames();
+            err += test_struct_api_getfieldnames(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"struct_api_addfield") ) {
             k++;
-            err += test_struct_api_addfield();
+            err += test_struct_api_addfield(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"struct_api_getlinear") ) {
             k++;
-            err += test_struct_api_getlinear();
+            err += test_struct_api_getlinear(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"struct_api_get") ) {
             k++;
-            err += test_struct_api_get();
+            err += test_struct_api_get(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"cell_api_set") ) {
             k++;
-            err += test_cell_api_set();
+            err += test_cell_api_set(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"cell_api_getlinear") ) {
             k++;
-            err += test_cell_api_getlinear();
+            err += test_cell_api_getlinear(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"cell_api_getcells") ) {
             k++;
-            err += test_cell_api_getcells();
+            err += test_cell_api_getcells(output_name);
             ntests++;
         } else if ( !strcasecmp(argv[k],"getstructfield") ) {
             k++;
@@ -2861,7 +2889,7 @@ int main (int argc, char *argv[])
             ntests++;
         } else if ( !strcasecmp(argv[k],"writeslab") ) {
            k++;
-           err += test_writeslab();
+           err += test_writeslab(output_name);
             ntests++;
     #if 0
         } else if ( !strcasecmp(argv[1],"cellslab") ) {

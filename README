@@ -14,10 +14,12 @@ Table of Contents
 4.0 Building with autoconf
   4.1 Quick Build Guide
   4.2 Configure Options
-5.0 Building with cmake
-  5.1 Quick Build Guide
-  5.2 Configure Options
-6.0 License
+  4.3 Testsuite
+5.0 Visual Studio
+6.0 Building with cmake
+  6.1 Quick Build Guide
+  6.2 Configure Options
+7.0 License
 
 1.0 Introduction
     matio is an open-source library for reading/writing MATLAB MAT files.
@@ -147,15 +149,41 @@ Table of Contents
                 Linux distributions install 64-bit libraries into lib64 and
                 32-bit libraries into lib.
 
-5.0 Building with cmake
+    4.3 Testsuite
+        A testsuite is available when building with the GNU autotools. To
+        run the testsuite, First configure and build matio. After building
+        run 'make check' to run the testsuite. If matio was built without
+        zlib, the compressed variable tests will be skipped. If built
+        without HDF5, the tests for version 7.3 MAT files will be skipped.
+        If the path to the MATLAB application was not specified
+        (--with-matlab), the write tests will fail if matio cannot read the
+        file and skip if matio can read the file. The write tests will pass
+        if MATLAB is available and can also read the file.
+
+        To report matio testsuite failures, compress the testsuite.log file
+        in the test sub-directory of the build directory. Upload the
+        compressed log file along with a bug report (see Section 1.4 for
+        information on reporting bugs).
+
+5.0 Building with Visual Studio
+
+    A visual studio solution is provided as visual_studio/matio.sln.
+    The solution is set up to build a DLL of the matio library
+    (libmatio.dll) and matdump tool in release mode and assumes HDF5 is
+    available in the directory specified by the HDF5_DIR environment
+    variable. The build was tested with the HDF5 visual studio pre-built
+    Windows binaries including zlib.
+
+6.0 Building with cmake
 
     This section describes how to build matio using the cmake build system.
     This is rather new and should be considered experimental, but has the 
     nice property that the same instructions can be used on all supported
     platforms. Section 5.1 describes how to build/test matio, and Section 5.2
-    the options that can be used to modify the build.
+    the options that can be used to modify the build. This build type can be
+    used on all platforms.
 
-    5.1 Quick Build Guide
+    6.1 Quick Build Guide
         The primary method for building the software is using 'ccmake'
         followed by 'make'. After building, the testsuite can be executed to
         test the software using 'make check'. The software can be installed
@@ -171,7 +199,7 @@ Table of Contents
         using the tracker (see Section 1.4). You should attach the generated
         testsuite.log file to the bug report.
 
-    5.2 Configure Options
+    6.2 Configure Options
         cmake also allows you to change the way matio is built ny tweaking several
         options. Those options can be passed to the cmake command line with the
         syntax -D OPTION=VALUE, or you can use a graphic interface.
@@ -183,6 +211,6 @@ Table of Contents
         The remaining of this section details the main options that can be
         tweaked.
 
-6.0 License
+7.0 License
     This software is provided under a Simplified BSD license. See the COPYING
     file for details on the license.
