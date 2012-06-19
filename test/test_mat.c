@@ -2717,11 +2717,13 @@ int main (int argc, char *argv[])
     for ( k = optind; k < argc; ) {
         if ( !strcasecmp(argv[k],"copy") ) {
             k++;
-            mat = Mat_CreateVer("test_mat_copy.mat",NULL,mat_file_ver);
+            if ( NULL == output_name )
+                output_name = "test_mat_copy.mat";
+            mat = Mat_CreateVer(output_name,NULL,mat_file_ver);
             mat2 = Mat_Open(argv[k++],MAT_ACC_RDONLY);
             if ( mat && mat2 ) {
                 while ( NULL != (matvar = Mat_VarReadNext(mat2)) )
-                    Mat_VarWrite( mat, matvar, 0);
+                    Mat_VarWrite( mat, matvar, compression);
                 Mat_Close(mat);
                 Mat_Close(mat2);
             }
