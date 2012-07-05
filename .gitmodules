@@ -3,4 +3,4 @@
 	url = git://matio.git.sourceforge.net/gitroot/matio/matio_test_datasets
 [submodule "contrib/hdf5"]
 	path = contrib/hdf5
-	url = git@github.com:papadop/hdf5-matio.git
+	url = git@github.com:openmeeg/hdf5-matio.git
