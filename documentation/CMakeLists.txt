@@ -13,7 +13,7 @@ IF (TEXI2PDF)
     ADD_CUSTOM_TARGET(user_documentation_pdf
                       COMMAND ${TEXI2PDF} ${CMAKE_CURRENT_SOURCE_DIR}/matio_user_guide.texi
                       DEPENDS intro.texi quick.texi matvar_structure.texi)
-    INSTALL(FILES matio_user_guide.pdf DESTINATION share/doc/matio)
+    INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_user_guide.pdf DESTINATION share/doc/matio)
 ENDIF()
 
 FIND_PROGRAM(TEXI2HTML texi2html)
@@ -22,7 +22,7 @@ IF (TEXI2HTML)
     ADD_CUSTOM_TARGET(user_documentation_html
                       COMMAND ${TEXI2HTML} ${CMAKE_CURRENT_SOURCE_DIR}/matio_user_guide.texi
                       DEPENDS intro.texi quick.texi matvar_structure.texi)
-    INSTALL(FILES matio_user_guide.html DESTINATION share/doc/matio)
+    INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_user_guide.html DESTINATION share/doc/matio)
 ENDIF()
 
 FIND_PROGRAM(TEXI2DVI texi2dvi)
@@ -35,7 +35,7 @@ IF (TEXI2DVI)
     ADD_CUSTOM_TARGET(user_documentation_dvi
                       COMMAND ${TEXI2DVI} --dvi ${CMAKE_CURRENT_SOURCE_DIR}/matio_user_guide.texi
                       DEPENDS intro.texi quick.texi matvar_structure.texi)
-    INSTALL(FILES matio_user_guide.ps matio_user_guide.dvi DESTINATION share/doc/matio)
+    INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_user_guide.ps ${CMAKE_CURRENT_BINARY_DIR}/matio_user_guide.dvi DESTINATION share/doc/matio)
 ENDIF()
 
 SET(DOC_FILE_TO_CLEAN matio_user_guide.aux matio_user_guide.cp matio_user_guide.dvi 
