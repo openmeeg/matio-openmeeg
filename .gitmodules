@@ -4,3 +4,6 @@
 [submodule "contrib/matio/test/datasets"]
 	path = contrib/matio/test/datasets
 	url = git://github.com/openmeeg/matio_test_data.git
+[submodule "contrib/hdf5"]
+	path = contrib/hdf5
+	url = git@github.com:papadop/hdf5-matio.git
