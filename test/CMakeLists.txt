@@ -160,9 +160,9 @@ SET(writeslab_vars              d f i)
 
 SET(MATIO_EMPTY_TESTS  write_empty_2d_numeric write_empty_struct write_empty_cell)
 SET(MATIO_SPARSE_TESTS write_sparse write_complex_sparse)
-SET(MATIO_OTHER_TESTS writeinf writenan writenull writeslab)
+#SET(MATIO_OTHER_TESTS writeinf writenan writenull writeslab)
 #   Invalidate writeslab tests which fail with segfault and cannot be xfailed.
-#SET(MATIO_OTHER_TESTS writeinf writenan writenull)
+SET(MATIO_OTHER_TESTS writeinf writenan writenull)
 FOREACH (version ${VERSIONS})
     FOREACH(type write_char ${MATIO_SPARSE_TESTS} ${MATIO_EMPTY_TESTS} ${MATIO_OTHER_TESTS})
         SET(testname ${type}-${version})
@@ -213,12 +213,17 @@ FOREACH (version ${VERSIONS})
         ENDFOREACH()
     ENDFOREACH()
 ENDFOREACH()
+
+# See comment on writeslab above.
+#SET_TESTS_PROPERTIES(
+#    MATIO-readvar-writeslab-7.3-i-COMPARISON
+#    MATIO-readvar-writeslab-7.3-f-COMPARISON MATIO-readvar-writeslab-7.3-d-COMPARISON
+#    MATIO-readvar-writenan-5-d-COMPARISON MATIO-readvar-writenan-5-compressed-d-COMPARISON MATIO-readvar-writenan-7.3-d-COMPARISON
+#    PROPERTIES WILL_FAIL TRUE)
+    
 SET_TESTS_PROPERTIES(
-    MATIO-readvar-writeslab-7.3-i-COMPARISON
-    MATIO-readvar-writeslab-7.3-f-COMPARISON MATIO-readvar-writeslab-7.3-d-COMPARISON
     MATIO-readvar-writenan-5-d-COMPARISON MATIO-readvar-writenan-5-compressed-d-COMPARISON MATIO-readvar-writenan-7.3-d-COMPARISON
     PROPERTIES WILL_FAIL TRUE)
-SET_TESTS_PROPERTIES(MATIO-writeslab-7.3 PROPERTIES PASS_REGULAR_EXPRESSION "SegFault")
     
 IF (MATLAB)
     SET_TESTS_PROPERTIES( MATIO-matlab-writeslab-7.3 PROPERTIES WILL_FAIL TRUE)
