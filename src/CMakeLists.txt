@@ -1,7 +1,7 @@
 SET(HEADERS matio_private.h mat4.h mat5.h matio.h matioConfig.h)
 #matio_io.c
 SET(SRC_FILES mat.c mat4.c mat5.c io.c endian.c matvar_cell.c matvar_struct.c read_data.c snprintf.c)
-IF (Z_LIBRARY)
+IF (ZLIB_LIBRARIES)
     SET(SRC_FILES ${SRC_FILES} inflate.c)
 ENDIF()
 
@@ -21,10 +21,13 @@ IF (MAT73)
     SET(SRC_FILES ${SRC_FILES} mat73.c)
 ENDIF()
 
+INCLUDE(GenerateExportHeader)
+ADD_COMPILER_EXPORT_FLAGS()
 ADD_LIBRARY(matio ${LIB_TYPE} ${SRC_FILES} ${HEADERS})
+GENERATE_EXPORT_HEADER(matio)
 
-IF (Z_LIBRARY)
-    TARGET_LINK_LIBRARIES(matio ${Z_LIBRARY})
+IF (ZLIB_LIBRARIES)
+    TARGET_LINK_LIBRARIES(matio ${ZLIB_LIBRARIES})
 ENDIF()
 
 IF (MAT73)
@@ -45,7 +48,7 @@ CONFIGURE_FILE(
 # = INSTALLATION =
 # ================
 
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h  ${FORTRAN_INTERFACE_FILE}
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h  ${CMAKE_CURRENT_BINARY_DIR}/matio_export.h ${FORTRAN_INTERFACE_FILE}
         DESTINATION include)
 
 INSTALL(TARGETS matio

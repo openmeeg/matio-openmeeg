@@ -28,6 +28,8 @@
 #ifndef MATIO_PUBCONF_H
 #define MATIO_PUBCONF_H 1
 
+#define MATIO_EXPORT
+
 /* Matio major version number */
 #undef MATIO_MAJOR_VERSION
 
