@@ -225,9 +225,10 @@ SET_TESTS_PROPERTIES(
     MATIO-readvar-writenan-5-d-COMPARISON MATIO-readvar-writenan-5-compressed-d-COMPARISON MATIO-readvar-writenan-7.3-d-COMPARISON
     PROPERTIES WILL_FAIL TRUE)
     
-IF (MATLAB)
-    SET_TESTS_PROPERTIES( MATIO-matlab-writeslab-7.3 PROPERTIES WILL_FAIL TRUE)
-ENDIF()
+# See comment on writeslab above.
+#IF (MATLAB)
+#    SET_TESTS_PROPERTIES( MATIO-matlab-writeslab-7.3 PROPERTIES WILL_FAIL TRUE)
+#ENDIF()
 
 SET(MATIO_CELL_TESTS   cell_api_set cell_api_getlinear cell_api_getcells)
 SET(MATIO_STRUCT_TESTS struct_api_create struct_api_setfield struct_api_getfieldnames struct_api_addfield struct_api_getlinear struct_api_get)
