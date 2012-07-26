@@ -1235,10 +1235,10 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
     printf("      Rank: %d\n", matvar->rank);
     if ( matvar->rank == 0 )
         return;
-    printf("Dimensions: %zu",matvar->dims[0]);
+    printf("Dimensions: "PRINTF_SIZE_T_SPECIFIER,matvar->dims[0]);
     nmemb = matvar->dims[0];
     for ( i = 1; i < matvar->rank; i++ ) {
-        printf(" x %zu",matvar->dims[i]);
+        printf(" x "PRINTF_SIZE_T_SPECIFIER,matvar->dims[i]);
         nmemb *= matvar->dims[i];
     }
     printf("\n");
@@ -1253,7 +1253,7 @@ Mat_VarPrint( matvar_t *matvar, int printdata )
         matvar_t **fields = (matvar_t **)matvar->data;
         int nfields = matvar->internal->num_fields;
         if ( nmemb*nfields > 0 ) {
-            printf("Fields[%zu] {\n", nfields*nmemb);
+            printf("Fields["PRINTF_SIZE_T_SPECIFIER"] {\n", nfields*nmemb);
             for ( i = 0; i < nfields*nmemb; i++ ) {
                 if ( NULL == fields[i] ) {
                     printf("      Name: %s\n      Rank: %d\n",

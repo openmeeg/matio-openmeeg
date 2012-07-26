@@ -48,6 +48,12 @@
 #   endif
 #endif
 
+#ifdef _MSC_VER
+#   define PRINTF_SIZE_T_SPECIFIER    "%Iu"
+#else
+#   define PRINTF_SIZE_T_SPECIFIER    "%zu"
+#endif
+
 #if defined(HAVE_ZLIB) && HAVE_ZLIB
 #   define ZLIB_BYTE_PTR(a) ((Bytef *)(a))
 #endif
