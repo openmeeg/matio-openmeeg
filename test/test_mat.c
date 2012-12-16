@@ -762,7 +762,6 @@ test_write_2d_numeric(enum matio_classes matvar_class, char *output_name)
     mat_uint64_t ui64[50];
 #endif
     mat_complex_split_t z = {NULL,NULL},s = {NULL,NULL};
-    char *str = "This is a string";
     mat_t *mat;
     matvar_t *matvar;
 
@@ -1065,7 +1064,7 @@ test_write_char(char *output_name)
 {
     char     *str = "aA1[bB2{cC3]dD4}eE5\\fF6|gG7;hH8:iI9'jJ0\"kK!,lL@<"
                     "mM#.nN$>oO%/pP^?qQ& rR* sS( tT) uU- vV_ wW= xX+ yY` zZ~ ";
-    int       err = 0, i;
+    int       err = 0;
     size_t    dims[2];
     mat_t    *mat;
     matvar_t *matvar;
@@ -1135,9 +1134,9 @@ static int
 test_write_empty_struct(char *output_name)
 {
     size_t  dims[2] = {0,0};
-    int    err = 0, i;
+    int    err = 0;
     mat_t     *mat;
-    matvar_t *matvar[5], *struct_matvar, *substruct_matvar;
+    matvar_t *matvar[5], *struct_matvar;
 
     mat = Mat_CreateVer(output_name,NULL,mat_file_ver);
     if ( mat ) {
@@ -1211,7 +1210,6 @@ test_write_struct_2d_logical(char *output_name)
     mat_uint8_t  lower_tri[25] = {0,};
     mat_t *mat;
     matvar_t *matvar[5], *struct_matvar;
-    enum matio_types data_type;
 
     for ( i = 0; i < 50; i++ ) {
         odd[i] = i % 2;
@@ -1598,9 +1596,9 @@ static int
 test_write_empty_cell(char *output_name)
 {
     size_t  dims[2] = {0,0};
-    int    err = 0, i;
+    int    err = 0;
     mat_t     *mat;
-    matvar_t *matvar[5], *cell_matvar, *struct_matvar, *substruct_matvar;
+    matvar_t *matvar[5], *cell_matvar;
 
     mat = Mat_CreateVer(output_name,NULL,mat_file_ver);
     if ( mat ) {
@@ -2086,7 +2084,6 @@ test_struct_api_create(const char *name)
 {
     size_t dims[2] = {5,10};
     int    err = 0;
-    mat_t *mat;
     matvar_t *matvar;
     size_t num_fields = 2;
     const char *fieldnames[2] = {"field1","field2"};
@@ -2725,7 +2722,7 @@ test_writeinf(const char *name)
 static int
 test_write_sparse(enum matio_classes matvar_class,char *output_name)
 {
-    int    err = 0, i;
+    int    err = 0;
     size_t dims[2] = {5,10};
     double    d[50] = {1,5,7,8,9,11,15,17,18,19,21,25,27,28,29,31,35,37,38,39,
                        41,45,47,48,49};
@@ -2775,7 +2772,7 @@ test_write_sparse(enum matio_classes matvar_class,char *output_name)
 static int
 test_write_complex_sparse(enum matio_classes matvar_class,char *output_name)
 {
-    int    err = 0, i;
+    int    err = 0;
     size_t dims[2] = {5,10};
     double    d_real[25] = {1,5,7,8,9,11,15,17,18,19,21,25,27,28,29,31,35,37,
                             38,39,41,45,47,48,49},
@@ -2850,7 +2847,7 @@ int main (int argc, char *argv[])
     char *prog_name = "test_mat";
     int   c,i, k, err = 0, ntests = 0;
     mat_t *mat, *mat2;
-    matvar_t *matvar, *matvar2, *matvar3;
+    matvar_t *matvar;
     enum matio_classes matvar_class = MAT_C_DOUBLE;
     char *output_name = NULL;
     int version[3];
