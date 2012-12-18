@@ -1,5 +1,5 @@
 IF(NOT WIN32)
-    SET(MATIO_EXTERNAL_LIBRARIES m) 
+    SET(MATIO_EXTERNAL_LIBRARIES m)
 ENDIF()
 
 ADD_EXECUTABLE(test_mat test_mat.c)
@@ -137,8 +137,8 @@ FOREACH(vers v4 compressed uncompressed hdf)
         ENDFOREACH()
     ENDFOREACH()
 ENDFOREACH()
-    
-SET(MATIO_WRITE_TESTS_NUMERIC 
+
+SET(MATIO_WRITE_TESTS_NUMERIC
      write_2d_numeric write_complex_2d_numeric write_struct_2d_numeric
      write_struct_complex_2d_numeric write_cell_2d_numeric write_cell_complex_2d_numeric)
 
@@ -199,7 +199,7 @@ FOREACH (version ${VERSIONS})
                 ENDIF()
                 MATIO_TEST_READ(MATIO-readvar-${testname}-${var} ${reference} test_mat readvar ${filename} ${var} DEPENDS MATIO-${testname})
             ENDFOREACH()
-        ENDIF() 
+        ENDIF()
     ENDFOREACH()
     FOREACH(type ${MATIO_WRITE_TESTS_NUMERIC})
         FOREACH(class double single int64 uint64 int32 uint32 int16 uint16 int8 uint8)
@@ -215,7 +215,7 @@ FOREACH (version ${VERSIONS})
                 MATIO_TEST_WRITE(MATIO-${testname} ${filename} test_mat -c ${class} -v ${version} -z ${type} -o ${filename})
                 MATIO_TEST_MATLAB_READ(MATIO-matlab-${testname} ${filename} ${type} ${class} DEPENDS MATIO-${testname})
                 MATIO_TEST_READ(MATIO-readvar-${testname} ${reference} test_mat readvar ${filename} a DEPENDS MATIO-${testname})
-            ENDIF() 
+            ENDIF()
         ENDFOREACH()
     ENDFOREACH()
 ENDFOREACH()
@@ -226,11 +226,17 @@ ENDFOREACH()
 #    MATIO-readvar-writeslab-7.3-f-COMPARISON MATIO-readvar-writeslab-7.3-d-COMPARISON
 #    MATIO-readvar-writenan-5-d-COMPARISON MATIO-readvar-writenan-5-compressed-d-COMPARISON MATIO-readvar-writenan-7.3-d-COMPARISON
 #    PROPERTIES WILL_FAIL TRUE)
-    
+
 SET_TESTS_PROPERTIES(
-    MATIO-readvar-writenan-5-d-COMPARISON MATIO-readvar-writenan-5-compressed-d-COMPARISON MATIO-readvar-writenan-7.3-d-COMPARISON
+    MATIO-readvar-writenan-5-d-COMPARISON MATIO-readvar-writenan-5-compressed-d-COMPARISON
     PROPERTIES WILL_FAIL TRUE)
-    
+
+IF (MAT73)
+    SET_TESTS_PROPERTIES(
+    MATIO-readvar-writenan-7.3-d-COMPARISON
+    PROPERTIES WILL_FAIL TRUE)
+ENDIF ()
+
 # See comment on writeslab above.
 #IF (MATLAB)
 #    SET_TESTS_PROPERTIES( MATIO-matlab-writeslab-7.3 PROPERTIES WILL_FAIL TRUE)
@@ -289,7 +295,7 @@ ENDFOREACH()
 #                    SET(filename test_${testname}.mat)
 #                    SET(testname getstructfield-${testname})
 #                    MATIO_TEST(MATIO-${testname} "" ${testname}.out test_mat getstructfield ${filename} a field${field})
-#                ENDIF() 
+#                ENDIF()
 #            ENDFOREACH()
 #        ENDFOREACH()
 #    ENDFOREACH()
