@@ -2194,7 +2194,7 @@ test_struct_api_getfieldnames(const char *name)
     }
     Mat_VarFree(matvar);
 
-    nfields     = Mat_VarGetNumberOfFields(matvar);
+    nfields     = Mat_VarGetNumberOfFields(NULL);
     fieldnames2 = Mat_VarGetStructFieldnames(NULL);
     printf("Fieldnames of \"NULL\":\n");
     if ( nfields < 1 ) {
