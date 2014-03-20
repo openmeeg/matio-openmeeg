@@ -1,32 +1,32 @@
-SET(PACKAGE_VERSION_MAJOR "1")
-SET(PACKAGE_VERSION_MINOR "5")
-SET(PACKAGE_VERSION_PATCH "0")
+set(PACKAGE_VERSION_MAJOR "1")
+set(PACKAGE_VERSION_MINOR "5")
+set(PACKAGE_VERSION_PATCH "0")
 
-SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
 # ===========
 # = Options =
 # ===========
 
-OPTION(ENABLE_FORTRAN "Enable fortran interface to mat library")
-SET(EXTRA_LANGAGE)
-IF (ENABLE_FORTRAN)
-    SET(EXTRA_LANGAGE Fortran)
-    SET(MATIO_FORTRAN TRUE)
-ENDIF()
+option(ENABLE_FORTRAN "Enable fortran interface to mat library")
+set(EXTRA_LANGAGE)
+if (ENABLE_FORTRAN)
+    set(EXTRA_LANGAGE Fortran)
+    set(MATIO_FORTRAN TRUE)
+endif()
 
-PROJECT(MATIO C ${EXTRA_LANGAGE})
+project(MATIO C ${EXTRA_LANGAGE})
 
-SET(MATIO_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-SET(MATIO_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(MATIO_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(MATIO_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8)
 
 # It may seem that ${CMAKE_ARCH_TRIPLET} might appear in a future cmake release.
 # For now, do for the best.
-SET(MATIO_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM_NAME})
+set(MATIO_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM_NAME})
 
-INCLUDE(FindLibrary)
+include(FindLibrary)
 
 # =======================
 # = HANDLE DEFINITTIONS =
@@ -36,21 +36,21 @@ INCLUDE(FindLibrary)
 # = Options =
 # ===========
 
-INCLUDE(DefaultFileVersion)
+include(DefaultFileVersion)
 
-OPTION(ENABLE_PROFILE "Turn on profile")
-IF (ENABLE_PROFILE)
-ENDIF()
+option(ENABLE_PROFILE "Turn on profile")
+if (ENABLE_PROFILE)
+endif()
 
-OPTION(EXTENDED_SP "Enable extended sparse matrix data types not supported in Matlab" ON)
-IF (EXTENDED_SP)
-    SET(EXTENDED_SPARSE 1)
-ENDIF()
+option(EXTENDED_SP "Enable extended sparse matrix data types not supported in Matlab" ON)
+if (EXTENDED_SP)
+    set(EXTENDED_SPARSE 1)
+endif()
 
-INCLUDE (Documentation OPTIONAL)
-IF (BUILD_DOCUMENTATION)
-    ADD_SUBDIRECTORY(documentation)
-ENDIF()
+include (Documentation optionAL)
+if (BUILD_DOCUMENTATION)
+    add_subdirectory(documentation)
+endif()
 
 # =================
 # = Check headers =
@@ -62,211 +62,205 @@ ENDIF()
 # MSVC starts to include stddint.h only from MSVC10 !!!
 # Append after in order to use the system includes if they are provided.
 
-IF (WIN32 AND NOT CYGWIN_INSTALL_PATH)
-    SET(INTTYPES_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/contrib/msinttypes-r26)
-    SET(CMAKE_REQUIRED_INCLUDES ${INTTYPES_INCLUDES})
-    INCLUDE_DIRECTORIES(AFTER SYSTEM ${INTTYPES_INCLUDES})
-ENDIF()
+if (WIN32 AND NOT CYGWIN_INSTALL_PATH)
+    set(INTTYPES_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/contrib/msinttypes-r26)
+    set(CMAKE_REQUIRED_INCLUDES ${INTTYPES_INCLUDES})
+    include_directories(AFTER SYSTEM ${INTTYPES_INCLUDES})
+endif()
 
-INCLUDE(CheckIncludeFile)
-INCLUDE(CheckHeaderSTDC)
+include(CheckIncludeFile)
+include(CheckHeaderSTDC)
 
-CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
-CHECK_INCLUDE_FILE(stdint.h   HAVE_STDINT_H)
-CHECK_INCLUDE_FILE(strings.h  HAVE_STRINGS_H)
-CHECK_INCLUDE_FILE(ctype.h    HAVE_CTYPE_H)
-CHECK_INCLUDE_FILE(stdlib.h   HAVE_STDLIB_H)
-CHECK_INCLUDE_FILE(string.h   HAVE_STRING_H)
+check_include_file(inttypes.h HAVE_INTTYPES_H)
+check_include_file(stdint.h   HAVE_STDINT_H)
+check_include_file(strings.h  HAVE_STRINGS_H)
+check_include_file(ctype.h    HAVE_CTYPE_H)
+check_include_file(stdlib.h   HAVE_STDLIB_H)
+check_include_file(string.h   HAVE_STRING_H)
 #CHECK_INCLUDE_FILE(malloc.h   HAVE_MALLOC_H)
-CHECK_HEADER_STDC()
+check_header_stdc()
 
 # ===================
 # = Check type size =
 # ===================
 
-INCLUDE(CheckTypeSize)
-SET(TYPES double float long int short char size_t)
-FOREACH(TYPE ${TYPES})
+include(CheckTypeSize)
+set(TYPES double float long int short char size_t)
+foreach(TYPE ${TYPES})
     string(TOUPPER ${TYPE} TYPE_UPPER)
-    CHECK_TYPE_SIZE(${TYPE} SIZEOF_${TYPE_UPPER})
-ENDFOREACH()
-CHECK_TYPE_SIZE("long long" LONG_LONG)
-SET(HAVE_LONG_LONG ${HAVE_${LONG_LONG}})
-SET(SIZEOF_LONG_LONG ${LONG_LONG})
-CHECK_TYPE_SIZE("long double" LONG_DOUBLE)
-SET(HAVE_LONG_DOUBLE ${HAVE_${LONG_DOUBLE}})
-CHECK_TYPE_SIZE(void* SIZEOF_VOID_P)
+    check_type_size(${TYPE} SIZEOF_${TYPE_UPPER})
+endforeach()
+check_type_size("long long" LONG_LONG)
+set(HAVE_LONG_LONG ${HAVE_${LONG_LONG}})
+set(SIZEOF_LONG_LONG ${LONG_LONG})
+check_type_size("long double" LONG_DOUBLE)
+set(HAVE_LONG_DOUBLE ${HAVE_${LONG_DOUBLE}})
+check_type_size(void* SIZEOF_VOID_P)
 
-SET(TYPES uint8_t uint16_t uint32_t uint64_t int8_t int16_t int32_t int64_t)
-FOREACH(TYPE ${TYPES})
+set(TYPES uint8_t uint16_t uint32_t uint64_t int8_t int16_t int32_t int64_t)
+foreach(TYPE ${TYPES})
     string(TOUPPER ${TYPE} TYPE_UPPER)
-    CHECK_TYPE_SIZE(${TYPE} ${TYPE_UPPER})
-    SET(HAVE_MAT_${TYPE_UPPER} ${HAVE_${TYPE_UPPER}})
-    SET(SIZEOF_${TYPE_UPPER} ${${TYPE_UPPER}})
-    IF(NOT ${${TYPE_UPPER}})
-        MESSAGE(FATAL_ERROR "Unknown type ${TYPE}")
-    ENDIF()
-ENDFOREACH()
+    check_type_size(${TYPE} ${TYPE_UPPER})
+    set(HAVE_MAT_${TYPE_UPPER} ${HAVE_${TYPE_UPPER}})
+    set(SIZEOF_${TYPE_UPPER} ${${TYPE_UPPER}})
+    if (NOT ${${TYPE_UPPER}})
+        message(FATAL_ERROR "Unknown type ${TYPE}")
+    endif()
+endforeach()
 
 # ===================
 # = Check functions =
 # ===================
 
-INCLUDE(CheckFunctionExists)
-CHECK_FUNCTION_EXISTS(vsnprintf  HAVE_VSNPRINTF)
-CHECK_FUNCTION_EXISTS(snprintf   HAVE_SNPRINTF)
-CHECK_FUNCTION_EXISTS(vasprintf  HAVE_VASPRINTF)
-CHECK_FUNCTION_EXISTS(asprintf   HAVE_ASPRINTF)
-CHECK_FUNCTION_EXISTS(strcasecmp HAVE_STRCASECMP)
-CHECK_FUNCTION_EXISTS(getopt     HAVE_GETOPT)
+include(CheckFunctionExists)
+check_function_exists(vsnprintf  HAVE_VSNPRINTF)
+check_function_exists(snprintf   HAVE_SNPRINTF)
+check_function_exists(vasprintf  HAVE_VASPRINTF)
+check_function_exists(asprintf   HAVE_ASPRINTF)
+check_function_exists(strcasecmp HAVE_STRCASECMP)
+check_function_exists(getopt     HAVE_GETOPT)
 
-INCLUDE(VA_COPY)
+include(VA_COPY)
 VA_COPY()
 
-IF (WIN32)
-    IF (NOT LIBRARY_OUTPUT_PATH)
-        SET(LIBRARY_OUTPUT_PATH    "${CMAKE_CURRENT_BINARY_DIR}")
-    ENDIF()
-    IF (NOT EXECUTABLE_OUTPUT_PATH)
-        SET(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}")
-    ENDIF()
-ENDIF()
+if (WIN32)
+    if (NOT LIBRARY_OUTPUT_PATH)
+        set(LIBRARY_OUTPUT_PATH    "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+    if (NOT EXECUTABLE_OUTPUT_PATH)
+        set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+endif()
 
-IF (NOT HAVE_GETOPT)
-    ADD_SUBDIRECTORY(getopt)
-    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/getopt)
-    SET(GETOPT_LIB gnu)
-ENDIF()
+if (NOT HAVE_GETOPT)
+    add_subdirectory(getopt)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/getopt)
+    set(GETOPT_LIB gnu)
+endif()
 
 # =========
 # = Z Lib =
 # =========
 
-OPTION(USE_SYSTEM_ZLIB "Use installed zlib if possible" ON)
-MARK_AS_ADVANCED(USE_SYSTEM_ZLIB)
+option(USE_SYSTEM_ZLIB "Use installed zlib if possible" ON)
+mark_as_advanced(USE_SYSTEM_ZLIB)
 
-STRING(COMPARE NOTEQUAL "${USE_SYSTEM_ZLIB_STATUS}" "" USE_SYSTEM_ZLIB_STATUS_NOT_EMPTY)
-IF (USE_SYSTEM_ZLIB_STATUS_NOT_EMPTY)
-    STRING(COMPARE NOTEQUAL "${USE_SYSTEM_ZLIB_STATUS}" "${USE_SYSTEM_ZLIB}" RESET)
-ENDIF()
+string(COMPARE NOTEQUAL "${USE_SYSTEM_ZLIB_STATUS}" "" USE_SYSTEM_ZLIB_STATUS_NOT_EMPTY)
+if (USE_SYSTEM_ZLIB_STATUS_NOT_EMPTY)
+    string(COMPARE NOTEQUAL "${USE_SYSTEM_ZLIB_STATUS}" "${USE_SYSTEM_ZLIB}" RESET)
+endif()
 
 # Store in cache previous value of BUILD_SHARED_LIBS
-SET(USE_SYSTEM_ZLIB_STATUS "${USE_SYSTEM_ZLIB}" CACHE INTERNAL "Previous system zlib status" FORCE)
+set(USE_SYSTEM_ZLIB_STATUS "${USE_SYSTEM_ZLIB}" CACHE INTERNAL "Previous system zlib status" FORCE)
 
-IF (${RESET})
-    UNSET(SYSTEM_ZLIB)
-    UNSET(SYSTEM_ZLIB CACHE)
-    UNSET(ZLIB_LIBRARIES)
-    UNSET(ZLIB_LIBRARIES CACHE)
-ENDIF()
+if (${RESET})
+    unset(SYSTEM_ZLIB)
+    unset(SYSTEM_ZLIB CACHE)
+    unset(ZLIB_LIBRARIES)
+    unset(ZLIB_LIBRARIES CACHE)
+endif()
 
-IF (USE_SYSTEM_ZLIB)
+if (USE_SYSTEM_ZLIB)
     MATIO_FIND_LIBRARY(SYSTEM_ZLIB z)
-    IF (SYSTEM_ZLIB)
-        SET(ZLIB_LIBRARIES ${SYSTEM_ZLIB} CACHE STRING "TEST")
-    ELSE()
-        SET(USE_LOCAL_ZLIB 1)
-    ENDIF()
-ENDIF()
+    if (SYSTEM_ZLIB)
+        set(ZLIB_LIBRARIES ${SYSTEM_ZLIB} CACHE STRING "TEST")
+    else()
+        set(USE_LOCAL_ZLIB 1)
+    endif()
+endif()
 
-IF (NOT USE_SYSTEM_ZLIB OR USE_LOCAL_ZLIB)
-    SET(ZLIBDIR contrib/zlib-1.2.6)
-    IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ZLIBDIR})
-        ADD_SUBDIRECTORY(${ZLIBDIR})
-        SET(ZLIB_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/${ZLIBDIR} ${CMAKE_CURRENT_BINARY_DIR}/${ZLIBDIR})
-        INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIRS})
-        IF (NOT BUILD_SHARED_LIBS)
-            SET(TARGET_SUFFIX -static)
-        ENDIF()
-        SET(ZLIB_LIBRARIES zlib)
-    ELSE()
-        MESSAGE(FATAL_ERROR "zlib is required by matio")
-    ENDIF()
-ENDIF()
+if (NOT USE_SYSTEM_ZLIB OR USE_LOCAL_ZLIB)
+    find_package(ZLIB)
+    if (NOT ZLIB_FOUND)
+        message(FATAL_ERROR "zlib is required by matio")
+    endif()
+    include_directories(${ZLIB_INCLUDE_DIR})
+    set(ZLIB_LIBRARIES zlib)
+endif()
 
-SET(HAVE_ZLIB 1)
-SET(Z_PREFIX)
+set(HAVE_ZLIB 1)
+set(Z_PREFIX)
 
 #   Tell Hdf5 to disable its own zlib detection (and to use this version).
 
-SET(H5_ZLIB_HEADER zlib.h)
+set(H5_ZLIB_HEADER zlib.h)
 
-OPTION(MAT73 "Matlab 7.3 support" ON)
+option(MAT73 "Matlab 7.3 support" ON)
 
-STRING(COMPARE NOTEQUAL "${MAT73_STATUS}" "" MAT73_STATUS_NOT_EMPTY)
-IF (MAT73_STATUS_NOT_EMPTY)
-    STRING(COMPARE NOTEQUAL "${MAT73_STATUS}" "${MAT73}" RESET)
-ENDIF()
+string(COMPARE NOTEQUAL "${MAT73_STATUS}" "" MAT73_STATUS_NOT_EMPTY)
+if (MAT73_STATUS_NOT_EMPTY)
+    string(COMPARE NOTEQUAL "${MAT73_STATUS}" "${MAT73}" RESET)
+endif()
 
 # Store in cache previous value of BUILD_SHARED_LIBS
-SET(MAT73_STATUS "${MAT73}" CACHE INTERNAL "Previous matlab 7.3 support status" FORCE)
+set(MAT73_STATUS "${MAT73}" CACHE INTERNAL "Previous matlab 7.3 support status" FORCE)
 
-IF (${RESET})
-    UNSET(HDF5_FOUND)
-    UNSET(HDF5_FOUND CACHE)
-ENDIF()
+if (${RESET})
+    unset(HDF5_FOUND)
+    unset(HDF5_FOUND CACHE)
+endif()
 
-IF (MAT73)
-    FIND_PACKAGE(HDF5 1.8 QUIET)
-    IF (HDF5_FOUND)
-        SET(HAVE_HDF5 1)
-        INCLUDE(HDF5Version)
+if (MAT73)
+    find_package(HDF5 1.8 QUIET)
+    if (HDF5_FOUND)
+        set(HAVE_HDF5 1)
+        include(HDF5Version)
         HDF5_VERIFY_VERSION(1.8.9 HDF5_OK)
-        IF (HDF5_OK EQUAL 1)
+        if (HDF5_OK EQUAL 1)
             MESSAGE(WARNING "hdf5 library must be 1.8.9 or higher. Using internal copy.")
-            SET(HDF5_FOUND FALSE)
-            SET(HDF5_INCLUDE_DIRS)
-            SET(HDF5_LIBRARIES)
+            set(HDF5_FOUND FALSE)
+            set(HDF5_INCLUDE_DIRS)
+            set(HDF5_LIBRARIES)
             UNSET(HAVE_HDF5)
-        ENDIF()
-    ENDIF()
-    IF (NOT HDF5_FOUND)
-        SET(HDF5LIBDIR contrib/hdf5)
-        IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR})
+        endif()
+    endif()
+    if (NOT HDF5_FOUND)
+        set(HDF5LIBDIR contrib/hdf5)
+        if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR})
 
             # Tell hdf5 that we are manually overriding certain settings
 
-            SET(HDF5_EXTERNALLY_CONFIGURED 1)
+            set(HDF5_EXTERNALLY_CONFIGURED 1)
 
             # Avoid duplicating names of installed libraries
 
-            SET(HDF5_EXTERNAL_LIB_PREFIX "matio")
+            set(HDF5_EXTERNAL_LIB_PREFIX "matio")
 
-            ADD_SUBDIRECTORY(${HDF5LIBDIR})
-            SET(HDF5_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR}/src ${CMAKE_CURRENT_BINARY_DIR}/${HDF5LIBDIR})
-            SET(HDF5_LIBRARIES hdf5)
-            SET(HAVE_HDF5 1)
-        ELSE()
+            add_subdirectory(${HDF5LIBDIR})
+            set(HDF5_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR}/src ${CMAKE_CURRENT_BINARY_DIR}/${HDF5LIBDIR})
+            set(HDF5_LIBRARIES hdf5)
+            set(HAVE_HDF5 1)
+        else()
             MESSAGE(WARNING "hdf5 not found, mat7.3 format disabled")
-            SET(MAT73 OFF CACHE BOOL "Matlab 7.3 support disabled because hdf5 was not found" FORCE)
-        ENDIF()
-    ENDIF()
-    IF (MAT73 AND HAVE_HDF5)
-        INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
-        IF (NOT BUILD_SHARED_LIBS)
-            SET(TARGET_SUFFIX -static)
-        ENDIF()
-        SET(HDF5_LIB ${HDF5_LIBRARIES})
-    ENDIF()
-ENDIF()
+            set(MAT73 OFF CACHE BOOL "Matlab 7.3 support disabled because hdf5 was not found" FORCE)
+        endif()
+    endif()
+    if (MAT73 AND HAVE_HDF5)
+        include_directories(${HDF5_INCLUDE_DIRS})
+        if (NOT BUILD_SHARED_LIBS)
+            set(TARGET_SUFFIX -static)
+        endif()
+        set(HDF5_LIB ${HDF5_LIBRARIES})
+    endif()
+endif()
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src)
-ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(tools)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+add_subdirectory(src)
+add_subdirectory(tools)
 
 # ==============
 # = pkg-config =
 # ==============
 
-SET(prefix ${CMAKE_INSTALL_PREFIX})
-SET(VERSION ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
-SET(exec_prefix "\${prefix}")
-SET(libdir "\${exec_prefix}/lib")
-SET(includedir "\${prefix}/include")
-SET(ZLIB_LIBS ${ZLIB_LIBRARIES})
+set(prefix ${CMAKE_INSTALL_PREFIX})
+set(VERSION ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
+set(exec_prefix "\${prefix}")
+set(libdir "\${exec_prefix}/lib")
+set(includedir "\${prefix}/include")
+set(ZLIB_LIBS ${ZLIB_LIBRARIES})
 
-CONFIGURE_FILE(
+configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/matio.pc.in"
     "${CMAKE_CURRENT_BINARY_DIR}/matio.pc"
     IMMEDIATE @ONLY)
@@ -277,29 +271,29 @@ CONFIGURE_FILE(
 # = Testing =
 # ===========
 
-OPTION(MATIO_BUILD_TESTING "Build matio tests" ON)
-IF (MATIO_BUILD_TESTING)
-    IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test/datasets)
-        INCLUDE(CTest)
-        ENABLE_TESTING()
-        ADD_SUBDIRECTORY(test)
-    ENDIF()
-ENDIF()
+option(MATIO_BUILD_TESTING "Build matio tests" ON)
+if (MATIO_BUILD_TESTING)
+    if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test/datasets)
+        include(CTest)
+        enable_testing()
+        add_subdirectory(test)
+    endif()
+endif()
 
 # =============
 # = Uninstall =
 # =============
 
-CONFIGURE_FILE(
+configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake"
     IMMEDIATE @ONLY)
 
-ADD_CUSTOM_TARGET(uninstall-${PROJECT-NAME}
+add_custom_target(uninstall-${PROJECT-NAME}
     "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
 
 #-----------------------------------------------
 # packaging
 #-----------------------------------------------
 
-INCLUDE(Packaging)
+include(Packaging)
