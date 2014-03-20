@@ -200,6 +200,7 @@ if (${RESET})
     unset(HDF5_FOUND CACHE)
 endif()
 
+set(CMAKE_FIND_DEBUG_MODE 1)
 if (MAT73)
     message("Looking for HDF5")
     find_package(HDF5)
