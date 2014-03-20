@@ -201,8 +201,10 @@ if (${RESET})
 endif()
 
 if (MAT73)
-    find_package(HDF5 1.8 QUIET)
+    message("Looking for HDF5")
+    find_package(HDF5)
     if (HDF5_FOUND)
+        message("HDF5 FOUND!!!!")
         set(HAVE_HDF5 1)
         include(HDF5Version)
         HDF5_VERIFY_VERSION(1.8.9 HDF5_OK)
@@ -213,27 +215,9 @@ if (MAT73)
             set(HDF5_LIBRARIES)
             UNSET(HAVE_HDF5)
         endif()
-    endif()
-    if (NOT HDF5_FOUND)
-        set(HDF5LIBDIR contrib/hdf5)
-        if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR})
-
-            # Tell hdf5 that we are manually overriding certain settings
-
-            set(HDF5_EXTERNALLY_CONFIGURED 1)
-
-            # Avoid duplicating names of installed libraries
-
-            set(HDF5_EXTERNAL_LIB_PREFIX "matio")
-
-            add_subdirectory(${HDF5LIBDIR})
-            set(HDF5_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/${HDF5LIBDIR}/src ${CMAKE_CURRENT_BINARY_DIR}/${HDF5LIBDIR})
-            set(HDF5_LIBRARIES hdf5)
-            set(HAVE_HDF5 1)
-        else()
-            MESSAGE(WARNING "hdf5 not found, mat7.3 format disabled")
-            set(MAT73 OFF CACHE BOOL "Matlab 7.3 support disabled because hdf5 was not found" FORCE)
-        endif()
+    else()
+        MESSAGE(WARNING "hdf5 not found, mat7.3 format disabled")
+        set(MAT73 OFF CACHE BOOL "Matlab 7.3 support disabled because hdf5 was not found" FORCE)
     endif()
     if (MAT73 AND HAVE_HDF5)
         include_directories(${HDF5_INCLUDE_DIRS})
