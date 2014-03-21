@@ -7,7 +7,7 @@ function(HDF5_VERIFY_VERSION HDF5MINVERS HDF5_COMP_RES)
     try_run(RRESULT CRESULT
             ${CMAKE_BINARY_DIR}/cmake
             ${CMAKE_CURRENT_SOURCE_DIR}/cmake/HDF5Version.c
-            COMPILE_DEFINITIONS ${DEFS}
+            CMAKE_FLAGS -DINCLUDE_DIRECTORIES::STRING=${HDF5_INCLUDE_DIRS}
             RUN_OUTPUT_VARIABLE HDF5VERS)
     message("::: ${RRESULT} ::: ${CRESULT} ::::")
     if (NOT ${CRESULT})
