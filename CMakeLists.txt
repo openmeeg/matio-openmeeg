@@ -55,7 +55,6 @@ endif()
 # Append after in order to use the system includes if they are provided.
 
 if (WIN32 AND NOT CYGWIN_INSTALL_PATH)
-    set(INTTYPES_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/contrib/msinttypes-r26)
     set(CMAKE_REQUIRED_INCLUDES ${INTTYPES_INCLUDES})
     include_directories(AFTER SYSTEM ${INTTYPES_INCLUDES})
 endif()
