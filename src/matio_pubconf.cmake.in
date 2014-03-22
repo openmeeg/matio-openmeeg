@@ -38,11 +38,13 @@
 /* Default file format */
 #cmakedefine MAT_FT_DEFAULT @MAT_FT_DEFAULT@
 
-#if @HAVE_INTTYPES_H@
+#cmakedefine HAVE_INTTYPES @HAVE_INTTYPES_H@
+#ifdef HAVE_INTTYPES
 #include <inttypes.h>
 #endif
 
-#if @HAVE_STDINT_H@
+#cmakedefine HAVE_STDINT @HAVE_STDINT_H@
+#ifdef HAVE_STDINT
 #include <stdint.h>
 #endif
 
