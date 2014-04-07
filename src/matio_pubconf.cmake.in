@@ -26,8 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef MATIO_PUBCONF_H
-#define MATIO_PUBCONF_H 1
+#pragma once
 
 #include "matio_export.h"
 
@@ -38,13 +37,13 @@
 /* Default file format */
 #cmakedefine MAT_FT_DEFAULT @MAT_FT_DEFAULT@
 
-#cmakedefine HAVE_INTTYPES @HAVE_INTTYPES_H@
-#ifdef HAVE_INTTYPES
+#cmakedefine HAVE_INTTYPES_H
+#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
 
-#cmakedefine HAVE_STDINT @HAVE_STDINT_H@
-#ifdef HAVE_STDINT
+#cmakedefine HAVE_STDINT_H
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
 
@@ -87,5 +86,3 @@ typedef int8_t   mat_int8_t;
 #ifdef HAVE_MAT_UINT8_T
 typedef uint8_t  mat_uint8_t;
 #endif
-
-#endif /* MATIO_PUBCONF_H */
