@@ -50,10 +50,11 @@ configure_file(
 # = INSTALLATION =
 # ================
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h  ${CMAKE_CURRENT_BINARY_DIR}/matio_export.h ${FORTRAN_INTERFACE_FILE}
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h 
+              ${CMAKE_CURRENT_SOURCE_DIR}/matio_export.h ${FORTRAN_INTERFACE_FILE}
         DESTINATION include)
 
 install(TARGETS matio
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib)
+        RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+        LIBRARY DESTINATION ${INSTALL_LIB_DIR}
+        ARCHIVE DESTINATION ${INSTALL_LIB_DIR})
