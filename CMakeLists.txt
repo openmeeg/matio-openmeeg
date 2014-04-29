@@ -15,22 +15,51 @@ endif()
 
 project(MATIO C ${EXTRA_LANGAGE})
 
-set(MATIO_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(MATIO_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-
 cmake_minimum_required(VERSION 2.8)
+
+include(FindLibrary)
+include(DefaultFileVersion)
+include(GenerateConfigFile)
+
+option(USE_SYSTEM_ZLIB "Use installed zlib if possible" ON)
+mark_as_advanced(USE_SYSTEM_ZLIB)
+option(MAT73 "Matlab 7.3 support" ON)
+
+set(HDF5 HDF5)
+if (MAT73)
+    set(HDF5 OPTIONAL HDF5)
+endif()
+
+Dependencies(matio ZLIB ${HDF5})
+
+include_directories(${ZLIB_INCLUDE_DIR} ${HDF5_INCLUDE_DIR})
+set(HAVE_ZLIB 1)
+set(Z_PREFIX)
+
+#   Tell Hdf5 to disable its own zlib detection (and to use this version).
+
+set(H5_ZLIB_HEADER zlib.h)
+
+if (MAT73)
+    include(CompareVersionStrings)
+    compare_version_strings("1.8.9" ${HDF5_VERSION_STRING} HDF5_OK)
+    if (HDF5_OK EQUAL 1)
+        MESSAGE(SEND_ERROR "hdf5 library must be 1.8.9 or higher. Using internal copy.")
+    endif()
+    include_directories(${HDF5_INCLUDE_DIRS})
+    if (NOT BUILD_SHARED_LIBS)
+        set(TARGET_SUFFIX -static)
+    endif()
+    set(HAVE_HDF5 1)
+    set(HDF5_LIB ${HDF5_LIBRARIES})
+endif()
 
 # It may seem that ${CMAKE_ARCH_TRIPLET} might appear in a future cmake release.
 # For now, do for the best.
+
 set(MATIO_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-unknown-${CMAKE_SYSTEM_NAME})
 
-include(FindLibrary)
-
-# HANDLE DEFINITTIONS
-
 # Options
-
-include(DefaultFileVersion)
 
 option(ENABLE_PROFILE "Turn on profile")
 if (ENABLE_PROFILE)
@@ -125,93 +154,6 @@ if (NOT HAVE_GETOPT)
     set(GETOPT_LIB gnu)
 endif()
 
-# zlib
-
-option(USE_SYSTEM_ZLIB "Use installed zlib if possible" ON)
-mark_as_advanced(USE_SYSTEM_ZLIB)
-
-string(COMPARE NOTEQUAL "${USE_SYSTEM_ZLIB_STATUS}" "" USE_SYSTEM_ZLIB_STATUS_NOT_EMPTY)
-if (USE_SYSTEM_ZLIB_STATUS_NOT_EMPTY)
-    string(COMPARE NOTEQUAL "${USE_SYSTEM_ZLIB_STATUS}" "${USE_SYSTEM_ZLIB}" RESET)
-endif()
-
-# Store in cache previous value of BUILD_SHARED_LIBS
-set(USE_SYSTEM_ZLIB_STATUS "${USE_SYSTEM_ZLIB}" CACHE INTERNAL "Previous system zlib status" FORCE)
-
-if (${RESET})
-    unset(SYSTEM_ZLIB)
-    unset(SYSTEM_ZLIB CACHE)
-    unset(ZLIB_LIBRARIES)
-    unset(ZLIB_LIBRARIES CACHE)
-endif()
-
-if (USE_SYSTEM_ZLIB)
-    MATIO_FIND_LIBRARY(SYSTEM_ZLIB z)
-    if (SYSTEM_ZLIB)
-        set(ZLIB_LIBRARIES ${SYSTEM_ZLIB} CACHE STRING "TEST")
-    else()
-        set(USE_LOCAL_ZLIB 1)
-    endif()
-endif()
-
-if (NOT USE_SYSTEM_ZLIB OR USE_LOCAL_ZLIB)
-    find_package(ZLIB)
-    if (NOT ZLIB_FOUND)
-        message(FATAL_ERROR "zlib is required by matio")
-    endif()
-    include_directories(${ZLIB_INCLUDE_DIR})
-    set(ZLIB_LIBRARIES zlib)
-endif()
-
-set(HAVE_ZLIB 1)
-set(Z_PREFIX)
-
-#   Tell Hdf5 to disable its own zlib detection (and to use this version).
-
-set(H5_ZLIB_HEADER zlib.h)
-
-option(MAT73 "Matlab 7.3 support" ON)
-
-string(COMPARE NOTEQUAL "${MAT73_STATUS}" "" MAT73_STATUS_NOT_EMPTY)
-if (MAT73_STATUS_NOT_EMPTY)
-    string(COMPARE NOTEQUAL "${MAT73_STATUS}" "${MAT73}" RESET)
-endif()
-
-# Store in cache previous value of BUILD_SHARED_LIBS
-set(MAT73_STATUS "${MAT73}" CACHE INTERNAL "Previous matlab 7.3 support status" FORCE)
-
-if (${RESET})
-    unset(HDF5_FOUND)
-    unset(HDF5_FOUND CACHE)
-endif()
-
-set(CMAKE_FIND_DEBUG_MODE 1)
-if (MAT73)
-    find_package(HDF5)
-    if (HDF5_FOUND)
-        set(HAVE_HDF5 1)
-        include(HDF5Version)
-        HDF5_VERIFY_VERSION(1.8.9 HDF5_OK)
-        if (HDF5_OK EQUAL 1)
-            MESSAGE(WARNING "hdf5 library must be 1.8.9 or higher. Using internal copy.")
-            set(HDF5_FOUND FALSE)
-            set(HDF5_INCLUDE_DIRS)
-            set(HDF5_LIBRARIES)
-            UNSET(HAVE_HDF5)
-        endif()
-    else()
-        MESSAGE(WARNING "hdf5 not found, mat7.3 format disabled")
-        set(MAT73 OFF CACHE BOOL "Matlab 7.3 support disabled because hdf5 was not found" FORCE)
-    endif()
-    if (MAT73 AND HAVE_HDF5)
-        include_directories(${HDF5_INCLUDE_DIRS})
-        if (NOT BUILD_SHARED_LIBS)
-            set(TARGET_SUFFIX -static)
-        endif()
-        set(HDF5_LIB ${HDF5_LIBRARIES})
-    endif()
-endif()
-
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_subdirectory(src)
@@ -230,6 +172,8 @@ configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/matio.pc.in"
     "${CMAKE_CURRENT_BINARY_DIR}/matio.pc"
     IMMEDIATE @ONLY)
+
+GenerateConfigFile(matio LIBRARIES matio)
 
 #INSTALL(EXPORT matio DESTINATION )
 
