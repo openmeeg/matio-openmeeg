@@ -21,7 +21,7 @@ if (MAT73)
     set(SRC_FILES ${SRC_FILES} mat73.c)
 endif()
 
-#   Does not work currently with C only projects for windows.
+#   Does not work currently with C only projects.
 #   Go back to old method and write the header by hand...
 #include(GenerateExportHeader)
 #add_compiler_export_flags()
