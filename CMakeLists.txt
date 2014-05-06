@@ -32,8 +32,9 @@ endif()
 
 set(FIND_PACKAGE_DEBUG 1)
 Dependencies(matio ZLIB ${HDF5})
+message("[[Found: ZLIB: ${ZLIB_INCLUDE_DIRS} HDF5: ${HDF5_INCLUDE_DIRS}]]")
 
-include_directories(${ZLIB_INCLUDE_DIR} ${HDF5_INCLUDE_DIR})
+include_directories(${ZLIB_INCLUDE_DIR})
 set(HAVE_ZLIB 1)
 set(Z_PREFIX)
 
@@ -43,16 +44,19 @@ set(H5_ZLIB_HEADER zlib.h)
 
 if (MAT73)
     include(CompareVersionStrings)
+    message("HDF5: ${HDF5_VERSION_STRING}")
     compare_version_strings("1.8.9" ${HDF5_VERSION_STRING} HDF5_OK)
     if (HDF5_OK EQUAL 1)
         MESSAGE(SEND_ERROR "hdf5 library must be 1.8.9 or higher. Using internal copy.")
     endif()
+    message("HERE: ${HDF5_INCLUDE_DIRS}")
     include_directories(${HDF5_INCLUDE_DIRS})
     if (NOT BUILD_SHARED_LIBS)
         set(TARGET_SUFFIX -static)
     endif()
     set(HAVE_HDF5 1)
     set(HDF5_LIB ${HDF5_LIBRARIES})
+    message("HERE: ${HDF5_LIB}")
 endif()
 
 # It may seem that ${CMAKE_ARCH_TRIPLET} might appear in a future cmake release.
