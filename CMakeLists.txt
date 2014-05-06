@@ -26,10 +26,11 @@ mark_as_advanced(USE_SYSTEM_ZLIB)
 option(MAT73 "Matlab 7.3 support" ON)
 
 set(HDF5 HDF5)
-if (MAT73)
-    set(HDF5 OPTIONAL HDF5)
+if (NOT MAT73)
+    set(HDF5 OPTIONAL ${HDF5})
 endif()
 
+set(FIND_PACKAGE_DEBUG 1)
 Dependencies(matio ZLIB ${HDF5})
 
 include_directories(${ZLIB_INCLUDE_DIR} ${HDF5_INCLUDE_DIR})
