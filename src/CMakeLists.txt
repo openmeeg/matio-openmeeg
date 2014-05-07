@@ -1,3 +1,5 @@
+include(GenerateExportHeader)
+
 set(HEADERS matio_private.h mat4.h mat5.h matio.h matioConfig.h)
 #matio_io.c
 set(SRC_FILES mat.c mat4.c mat5.c io.c endian.c matvar_cell.c matvar_struct.c read_data.c snprintf.c)
@@ -21,11 +23,6 @@ if (MAT73)
     set(SRC_FILES ${SRC_FILES} mat73.c)
 endif()
 
-#   Does not work currently with C only projects.
-#   Go back to old method and write the header by hand...
-#include(GenerateExportHeader)
-#add_compiler_export_flags()
-#generate_export_header(matio)
 add_library(matio ${LIB_TYPE} ${SRC_FILES} ${HEADERS})
 
 if (ZLIB_LIBRARIES)
@@ -35,6 +32,9 @@ endif()
 if (MAT73)
     target_link_libraries(matio ${HDF5_LIB})
 endif()
+
+add_compiler_export_flags()
+generate_export_header(matio)
 
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/matioConfig.cmake.in"

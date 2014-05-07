@@ -13,7 +13,11 @@ if (ENABLE_FORTRAN)
     set(MATIO_FORTRAN TRUE)
 endif()
 
-project(MATIO C ${EXTRA_LANGAGE})
+#   CXX is added just for GenerateExportHeader that uses the
+#   CXX compiler to check or visibilityy. It can disappear
+#   as soon as this cmake bug is corrected.
+
+project(MATIO C CXX ${EXTRA_LANGAGE})
 
 cmake_minimum_required(VERSION 2.8)
 
