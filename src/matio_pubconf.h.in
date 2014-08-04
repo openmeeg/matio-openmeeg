@@ -75,11 +75,11 @@
 /* int8 type */
 #undef _mat_uint8_t
 
-#if MATIO_HAVE_INTTYPES_H
+#ifdef MATIO_HAVE_INTTYPES_H
 #   include <inttypes.h>
 #endif
 
-#if MATIO_HAVE_STDINT_H
+#ifdef MATIO_HAVE_STDINT_H
 #   include <stdint.h>
 #endif
 

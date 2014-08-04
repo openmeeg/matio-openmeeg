@@ -14,17 +14,17 @@
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 
 
-MACRO (CHECK_HEADER_STDC)
-  IF(NOT DEFINED STDC_HEADERS)
-    IF(CMAKE_REQUIRED_INCLUDES)
-      SET(CHECK_HEADER_STDC_C_INCLUDE_DIRS "-DINCLUDE_DIRECTORIES=${CMAKE_REQUIRED_INCLUDES}")
-    ELSE(CMAKE_REQUIRED_INCLUDES)
-      SET(CHECK_HEADER_STDC_C_INCLUDE_DIRS)
-    ENDIF(CMAKE_REQUIRED_INCLUDES)
-    SET(MACRO_CHECK_HEADER_STDC_FLAGS ${CMAKE_REQUIRED_FLAGS})
+macro (CHECK_HEADER_STDC)
+    if (NOT DEFINED STDC_HEADERS)
+    if (CMAKE_REQUIRED_INCLUDES)
+        set(CHECK_HEADER_STDC_C_INCLUDE_DIRS "-DINCLUDE_DIRECTORIES=${CMAKE_REQUIRED_INCLUDES}")
+    else()
+        set(CHECK_HEADER_STDC_C_INCLUDE_DIRS)
+    endif()
+    set(MACRO_CHECK_HEADER_STDC_FLAGS ${CMAKE_REQUIRED_FLAGS})
 
-    MESSAGE(STATUS "Cheking for ANSI C header files")
-    TRY_RUN(CHECK_HEADER_STDC_result
+    message(STATUS "Cheking for ANSI C header files")
+    try_run(CHECK_HEADER_STDC_result
       CHECK_HEADER_STDC_compile_result
       ${CMAKE_BINARY_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CheckHeaderSTDC.c
@@ -34,32 +34,30 @@ MACRO (CHECK_HEADER_STDC)
       "${CHECK_HEADER_STDC_C_INCLUDE_DIRS}"
       OUTPUT_VARIABLE OUTPUT)
 
-    IF(CHECK_HEADER_STDC_compile_result AND CHECK_HEADER_STDC_result EQUAL 0)
-      FIND_PATH(CHECK_HEADER_STDC_path "string.h")
-      IF (CHECK_HEADER_STDC_path)
-        FILE(STRINGS "${CHECK_HEADER_STDC_path}/string.h" CHECK_HEADER_STDC_result REGEX "[^a-zA-Z_]memchr[^a-zA-Z_]")
-	IF (CHECK_HEADER_STDC_result)
-          FILE(STRINGS "${CHECK_HEADER_STDC_path}/stdlib.h" CHECK_HEADER_STDC_result REGEX "[^a-zA-Z_]free[^a-zA-Z_]")
-	ENDIF (CHECK_HEADER_STDC_result)
-      ENDIF (CHECK_HEADER_STDC_path)
-    ENDIF(CHECK_HEADER_STDC_compile_result AND CHECK_HEADER_STDC_result EQUAL 0)
+    if (CHECK_HEADER_STDC_compile_result AND CHECK_HEADER_STDC_result EQUAL 0)
+      find_path(CHECK_HEADER_STDC_path "string.h")
+      if (CHECK_HEADER_STDC_path)
+        file(STRINGS "${CHECK_HEADER_STDC_path}/string.h" CHECK_HEADER_STDC_result REGEX "[^a-zA-Z_]memchr[^a-zA-Z_]")
+    if (CHECK_HEADER_STDC_result)
+          file(STRINGS "${CHECK_HEADER_STDC_path}/stdlib.h" CHECK_HEADER_STDC_result REGEX "[^a-zA-Z_]free[^a-zA-Z_]")
+    endif (CHECK_HEADER_STDC_result)
+      endif (CHECK_HEADER_STDC_path)
+    endif()
 
-    IF(CHECK_HEADER_STDC_result)
-      MESSAGE(STATUS "Cheking for ANSI C header files - found")
-      SET(STDC_HEADERS 1 CACHE INTERNAL "Have ANSI C headers")
-      FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
+    if(CHECK_HEADER_STDC_result)
+      message(STATUS "Cheking for ANSI C header files - found")
+      set(STDC_HEADERS 1 CACHE INTERNAL "Have ANSI C headers")
+      file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
         "Determining if the include file ${INCLUDE} "
         "exists passed with the following output:\n"
         "${OUTPUT}\n\n")
-    ELSE(CHECK_HEADER_STDC_result)
-      MESSAGE(STATUS "Cheking for ANSI C header files - not found")
-      SET(STDC_HEADERS "" CACHE INTERNAL "Have ANSI C headers")
-      FILE(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
+    else()
+      message(STATUS "Cheking for ANSI C header files - not found")
+      set(STDC_HEADERS "" CACHE INTERNAL "Have ANSI C headers")
+      file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
         "Determining if the include file ${INCLUDE} "
         "exists failed with the following output:\n"
         "${OUTPUT}\n\n")
-    ENDIF(CHECK_HEADER_STDC_result)
-
-  ENDIF(NOT DEFINED STDC_HEADERS)
-ENDMACRO (CHECK_HEADER_STDC)
-
+    endif()
+  endif()
+endmacro()

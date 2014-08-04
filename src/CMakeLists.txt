@@ -1,45 +1,47 @@
-SET(HEADERS matio_private.h mat4.h mat5.h matio.h matioConfig.h)
+include(GenerateExportHeader)
+
+set(HEADERS matio_private.h mat4.h mat5.h matio.h matioConfig.h)
 #matio_io.c
-SET(SRC_FILES mat.c mat4.c mat5.c io.c endian.c matvar_cell.c matvar_struct.c read_data.c snprintf.c)
-IF (ZLIB_LIBRARIES)
-    SET(SRC_FILES ${SRC_FILES} inflate.c)
-ENDIF()
+set(SRC_FILES mat.c mat4.c mat5.c io.c endian.c matvar_cell.c matvar_struct.c read_data.c snprintf.c)
+if (ZLIB_LIBRARIES)
+    set(SRC_FILES ${SRC_FILES} inflate.c)
+endif()
 
-IF (WIN32)
-    SET(SRC_FILES ${SRC_FILES} matio.rc)
-ENDIF()
+if (WIN32)
+    set(SRC_FILES ${SRC_FILES} matio.rc)
+endif()
 
-SET(FORTRAN_INTERFACE_FILE)
-IF (ENABLE_FORTRAN)
-    INCLUDE(FortranCInterface)
+set(FORTRAN_INTERFACE_FILE)
+if (ENABLE_FORTRAN)
+    include(FortranCInterface)
     FortranCInterface_HEADER(fortran.h MACRO_NAMESPACE "FC_")
-    SET(FORTRAN_INTERFACE_FILE ${CMAKE_CURRENT_BINARY_DIR}/fortran.h)
-    ADD_SUBDIRECTORY(fortran)
-ENDIF()
+    set(FORTRAN_INTERFACE_FILE ${CMAKE_CURRENT_BINARY_DIR}/fortran.h)
+    add_subdirectory(fortran)
+endif()
 
-IF (MAT73)
-    SET(SRC_FILES ${SRC_FILES} mat73.c)
-ENDIF()
+if (MAT73)
+    set(SRC_FILES ${SRC_FILES} mat73.c)
+endif()
 
-INCLUDE(GenerateExportHeader)
-ADD_COMPILER_EXPORT_FLAGS()
-ADD_LIBRARY(matio ${LIB_TYPE} ${SRC_FILES} ${HEADERS})
-GENERATE_EXPORT_HEADER(matio)
+add_library(matio ${LIB_TYPE} ${SRC_FILES} ${HEADERS})
 
-IF (ZLIB_LIBRARIES)
-    TARGET_LINK_LIBRARIES(matio ${ZLIB_LIBRARIES})
-ENDIF()
+if (ZLIB_LIBRARIES)
+    target_link_libraries(matio ${ZLIB_LIBRARIES})
+endif()
 
-IF (MAT73)
-    TARGET_LINK_LIBRARIES(matio ${HDF5_LIB})
-ENDIF()
+if (MAT73)
+    target_link_libraries(matio ${HDF5_LIB})
+endif()
 
-CONFIGURE_FILE(
+add_compiler_export_flags()
+generate_export_header(matio)
+
+configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/matioConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/matioConfig.h"
     IMMEDIATE @ONLY)
 
-CONFIGURE_FILE(
+configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/matio_pubconf.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h"
     IMMEDIATE @ONLY)
@@ -48,10 +50,11 @@ CONFIGURE_FILE(
 # = INSTALLATION =
 # ================
 
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h  ${CMAKE_CURRENT_BINARY_DIR}/matio_export.h ${FORTRAN_INTERFACE_FILE}
-        DESTINATION include)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h 
+              ${CMAKE_CURRENT_SOURCE_DIR}/matio_export.h ${FORTRAN_INTERFACE_FILE}
+        DESTINATION ${INSTALL_INCLUDE_DIR})
 
-INSTALL(TARGETS matio
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib)
+install(TARGETS matio
+        RUNTIME DESTINATION ${INSTALL_BIN_DIR}
+        LIBRARY DESTINATION ${INSTALL_LIB_DIR}
+        ARCHIVE DESTINATION ${INSTALL_LIB_DIR})
