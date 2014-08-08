@@ -34,7 +34,7 @@ if (NOT PACKAGE_NAME)
         set(CPACK_PACKAGE_INSTALL_DIRECTORY "matio")
         set(CPACK_PACKAGE_CONTACT "cch@isl-inc.com")
 
-        if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+        if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
             set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE amd64)
             set(CPACK_RPM_PACKAGE_ARCHITECTURE x86_64)
         else()
