@@ -1,6 +1,6 @@
-IF(NOT WIN32)
-    SET(MATIO_EXTERNAL_LIBRARIES m) 
-ENDIF()
+if (NOT WIN32)
+    set(MATDUMP_EXTERNAL_LIBRARIES m) 
+endif()
 
-ADD_EXECUTABLE(matdump matdump.c)
-TARGET_LINK_LIBRARIES(matdump matio ${MATIO_EXTERNAL_LIBRARIES} ${GETOPT_LIB})
+add_executable(matdump matdump.c)
+target_link_libraries(matdump matio ${MADUMP_EXTERNAL_LIBRARIES} ${GETOPT_LIB})
