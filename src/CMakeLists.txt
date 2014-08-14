@@ -51,7 +51,7 @@ configure_file(
 # ================
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/matio_pubconf.h ${CMAKE_CURRENT_SOURCE_DIR}/matio.h 
-              ${CMAKE_CURRENT_SOURCE_DIR}/matio_export.h ${FORTRAN_INTERFACE_FILE}
+              ${CMAKE_CURRENT_BINARY_DIR}/matio_export.h ${FORTRAN_INTERFACE_FILE}
         DESTINATION ${INSTALL_INCLUDE_DIR})
 
 install(TARGETS matio
