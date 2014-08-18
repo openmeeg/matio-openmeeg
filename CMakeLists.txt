@@ -47,7 +47,6 @@ set(Z_PREFIX)
 set(H5_ZLIB_HEADER zlib.h)
 
 if (MAT73)
-    include(CompareVersionStrings)
     #message("HDF5: ${HDF5_VERSION_STRING}")
     if ("${HDF5_VERSION_STRING}" VERSION_LESS "1.8.9")
         MESSAGE(SEND_ERROR "hdf5 library must be 1.8.9 or higher. Using internal copy.")
