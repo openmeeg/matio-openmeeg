@@ -56,7 +56,7 @@ if (MAT73)
         set(TARGET_SUFFIX -static)
     endif()
     set(HAVE_HDF5 1)
-    set(HDF5_LIB ${HDF5_LIBRARIES})
+    get_property(HDF5_LIB TARGET hdf5 PROPERTY LOCATION)
 endif()
 
 # It may seem that ${CMAKE_ARCH_TRIPLET} might appear in a future cmake release.
@@ -193,16 +193,5 @@ if (MATIO_BUILD_TESTING)
     endif()
 endif()
 
-# Uninstall
-
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake"
-    IMMEDIATE @ONLY)
-
-add_custom_target(uninstall-${PROJECT-NAME}
-    "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
-
-# packaging
-
+include(Uninstall)
 include(Packaging)

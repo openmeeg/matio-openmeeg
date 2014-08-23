@@ -31,6 +31,9 @@ endif()
 
 if (MAT73)
     target_link_libraries(matio ${HDF5_LIB})
+    if (NOT WIN32)
+        target_link_libraries(matio m)
+    endif()
 endif()
 
 add_compiler_export_flags()
