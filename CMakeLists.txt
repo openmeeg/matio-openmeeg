@@ -56,7 +56,10 @@ if (MAT73)
         set(TARGET_SUFFIX -static)
     endif()
     set(HAVE_HDF5 1)
-    get_property(HDF5_LIB TARGET hdf5 PROPERTY LOCATION)
+    #get_property(HDF5_LIB TARGET hdf5 PROPERTY LOCATION)
+    #add_library(hdf5 SHARED IMPORTED)
+    #set_property(TARGET hdf5 PROPERTY IMPORTED_LOCATION ${HDF5_LIB})
+    set(HDF5_LIB ${HDF5_LIBRARIES})
 endif()
 
 # It may seem that ${CMAKE_ARCH_TRIPLET} might appear in a future cmake release.
