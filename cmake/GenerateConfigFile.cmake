@@ -4,7 +4,7 @@ include(CMakePackageConfigHelpers)
 
 get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
 
-if ("X${LIB64}" STREQUAL "XTRUE")
+if ("X${LIB64}" STREQUAL "XTRUE" AND NOT APPLE)
     set(LIBSUFFIX 64)
 else()
     set(LIBSUFFIX "")
