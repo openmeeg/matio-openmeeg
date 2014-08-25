@@ -18,6 +18,7 @@ endif()
  
 #   These are IMPORTED targets created by @ConfigName@LibraryDepends.cmake
 
+set_and_check(@ConfigName@_ROOT_DIR    "${PACKAGE_PREFIX_DIR}")
 set_and_check(@ConfigName@_CONFIG_DIR  "@PACKAGE_INSTALL_DATA_DIR@")
 set_and_check(@ConfigName@_LIBRARY_DIR "@PACKAGE_INSTALL_LIB_DIR@")
 set_and_check(@ConfigName@_INCLUDE_DIR "@PACKAGE_INSTALL_INCLUDE_DIR@")
