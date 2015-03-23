@@ -1,6 +1,7 @@
 set(PACKAGE_VERSION_MAJOR "1")
 set(PACKAGE_VERSION_MINOR "5")
 set(PACKAGE_VERSION_PATCH "2")
+set(VERSION ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
@@ -167,7 +168,6 @@ add_subdirectory(tools)
 # pkg-config
 
 set(prefix ${CMAKE_INSTALL_PREFIX})
-set(VERSION ${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH})
 set(exec_prefix "\${prefix}")
 set(libdir "\${exec_prefix}/lib")
 set(includedir "\${prefix}/include")
