@@ -8,7 +8,9 @@
 
 #   Our library dependencies (contains definitions for IMPORTED targets)
 
+string(TOUPPER @ConfigName@ UpperConfigName)
 set(@ConfigName@_VERSION @VERSION@)
+set(${UpperConfigName}_VERSION @VERSION@)
 @PACKAGE_INIT@
 
 set(@ConfigName@_LIBRARY_DEPENDS_FILE "@PACKAGE_INSTALL_DATA_DIR@/@ConfigName@/cmake/@ConfigName@Dependencies.cmake")
