@@ -1,0 +1,28 @@
+language: cpp
+sudo: required
+dist: trusty
+
+os:
+  - linux
+  - osx
+
+env:
+  - MAT73=ON
+  - MAT73=OFF
+
+compiler:
+  - clang
+  - gcc
+
+matrix:
+  exclude:
+    - os: osx
+      compiler: gcc
+
+before_install: source build_tools/travis/before_install.sh
+
+install: source build_tools/travis/install.sh
+
+script:
+  - $CXX --version
+  # - ctest -V
