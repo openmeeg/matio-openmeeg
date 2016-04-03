@@ -1,5 +1,5 @@
 add_executable(test_mat test_mat.c)
-target_link_libraries(test_mat matio ${GETOPT_LIB})
+target_link_libraries(test_mat matio ${GETOPT_LIB} m)
 
 add_executable(test_snprintf test_snprintf.c ${MATIO_SOURCE_DIR}/src/snprintf.c)
 target_link_libraries(test_snprintf ${GETOPT_LIB} m)
