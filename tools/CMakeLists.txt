@@ -1,2 +1,6 @@
 add_executable(matdump matdump.c)
-target_link_libraries(matdump matio ${GETOPT_LIB} m)
+if (WIN32)
+    target_link_libraries(matdump matio ${GETOPT_LIB})
+else ()
+    target_link_libraries(matdump matio ${GETOPT_LIB} m)
+endif()
