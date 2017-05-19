@@ -21,7 +21,6 @@ endif()
 
 if (NOT PACKAGE_NAME)
     if (ENABLE_PACKAGING OR BUILD_RPM)
-
         include(InstallRequiredSystemLibraries)
 
         configure_file(${MATIO_SOURCE_DIR}/README  README.txt  COPYONLY)
@@ -42,6 +41,17 @@ if (NOT PACKAGE_NAME)
             set(CPACK_RPM_PACKAGE_ARCHITECTURE i386)
         endif()
 
+        if (UNIX)
+            set(SYSTEMDIR linux)
+            if (APPLE)
+                set(SYSTEMDIR apple)
+            endif()
+        else()
+            set(CPACK_SET_DESTDIR false)
+            set(CPACK_INSTALL_PREFIX "")
+            set(SYSTEMDIR windows)
+        endif()
+
         set(PACKAGE_NAME "matio-${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH}")
         if (UNIX)
             if (APPLE)
@@ -56,7 +66,7 @@ if (NOT PACKAGE_NAME)
             set(PACKAGE_NAME ${PACKAGE_NAME}-win32-x86)
         endif()
 
-        set(PACKAGE_NAME ${PACKAGE_NAME}-${PACKAGE_COMPILER})
+        #set(PACKAGE_NAME ${PACKAGE_NAME}-${PACKAGE_COMPILER})
 
         if (USE_OMP)
             set(PACKAGE_NAME ${PACKAGE_NAME}-OpenMP)
@@ -92,7 +102,6 @@ if (NOT PACKAGE_NAME)
         if (APPLE)
             set(CPACK_GENERATOR "PackageMaker;TGZ")
         endif()
-
         include(CPack)
 
         if (UNIX AND BUILD_RPM) # linux
@@ -104,9 +113,9 @@ if (NOT PACKAGE_NAME)
                 endif()
             else()
                 set(CPACK_RPM_PACKAGE_LICENSE "LGPL")
-                set(CPACK_RPM_PACKAGE_DESCRIPTION  "libmatio is an open-source library for reading/writing Matlab MAT files.  This
-    library is designed for use by programs/libraries that do not have access or
-    do not want to rely on Matlab's libmat shared library.")
+                set(CPACK_RPM_PACKAGE_DESCRIPTION  "libmatio is an open-source library for reading/writing Matlab MAT files.  This"
+                    " library is designed for use by programs/libraries that do not have access or"
+                    " do not want to rely on Matlab's libmat shared library.")
                 set(CPACK_RPM_PACKAGE_GROUP "Libraries")
             endif()
         endif()
