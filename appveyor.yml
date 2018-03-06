@@ -10,7 +10,7 @@ configuration:
 
 image:
   - Visual Studio 2015
-  # - Visual Studio 2017
+  - Visual Studio 2017
 
 cache:
   - C:\cmake-3.10.1-win64-x64
@@ -26,9 +26,9 @@ skip_commits:
 # Add [av skip] to commit messages
   message: /\[av skip\]/
 
-# To allow remote connection to appveyor
-init:
-  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+# # To allow remote connection to appveyor
+# init:
+#   - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 install:
   ############################################################################
@@ -51,11 +51,17 @@ install:
       $env:PATH="C:\cmake-3.10.1-win64-x64\bin;$env:PATH"
 
 before_build:
+  - echo %APPVEYOR_BUILD_WORKER_IMAGE%
   - cd %APPVEYOR_BUILD_FOLDER%
   - ps: |
       mkdir build
       cd build
-  - cmake -G "Visual Studio 14 2015 Win64" ..
+  - ps: |
+      If ( $env:APPVEYOR_BUILD_WORKER_IMAGE -match 2015 ){
+        cmake -G "Visual Studio 14 2015 Win64" ..  
+      } Else { 
+        cmake -G "Visual Studio 15 2017 Win64" ..  
+      }
 
 build_script:
   - cmake --build .
@@ -65,5 +71,5 @@ test_script:
 
 deploy: off
 
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+# on_finish:
+#   - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
